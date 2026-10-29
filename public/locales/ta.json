@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "கிடைக்கும் இரண்டாம் படிகள்",
 	"twoStep.passkeysAvailable": "{count} பாஸ்கீகள் கடவுச்சொல் உள்நுழைவை உறுதிப்படுத்த முடியும்.",
 	"twoStep.noPasskeys": "பாஸ்கீகள் எதுவும் பதிவு செய்யப்படவில்லை.",
-	"twoStep.authenticatorOn": "அங்கீகரிப்புச் செயலி இயக்கத்தில் உள்ளது · {count} மீட்புக் குறியீடுகள் மீதம்.",
-	"twoStep.authenticatorOff": "அங்கீகரிப்புச் செயலி அணைக்கப்பட்டுள்ளது.",
+	"twoStep.authenticatorOn": "அமைக்கப்பட்டுள்ளது · {count} மீட்புக் குறியீடுகள் மீதம்.",
+	"twoStep.authenticatorOff": "அமைக்கப்படவில்லை.",
 	"common.save": "சேமி",
-	"authError.passkeyOnlyPassword": "இந்தக் கணக்கு பாஸ்கீகளை மட்டுமே பயன்படுத்துகிறது. அதற்குப் பதிலாக மீட்பு இணைப்பை அனுப்பவும்."
+	"authError.passkeyOnlyPassword": "இந்தக் கணக்கு பாஸ்கீகளை மட்டுமே பயன்படுத்துகிறது. அதற்குப் பதிலாக மீட்பு இணைப்பை அனுப்பவும்.",
+	"passkey.check": "பாஸ்கீயைச் சரிபார்க்கவும்",
+	"passkey.justVerified": "இப்போது சரிபார்க்கப்பட்டது",
+	"passkey.cantUse": "பாஸ்கீயைப் பயன்படுத்த முடியவில்லையா?",
+	"twoStep.addMethodHint": "இதை இயக்க பாஸ்கீ அல்லது அங்கீகரிப்புச் செயலியைச் சேர்க்கவும்.",
+	"twoStep.passkeyTitle": "பாஸ்கீ",
+	"twoStep.managePasskeys": "பாஸ்கீகளை நிர்வகிக்கவும்",
+	"twoStep.authenticatorTitle": "அங்கீகரிப்புச் செயலி"
 }

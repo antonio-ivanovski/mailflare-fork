@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Доступные вторые шаги",
 	"twoStep.passkeysAvailable": "Ключи доступа для подтверждения входа по паролю: {count}.",
 	"twoStep.noPasskeys": "Ключи доступа не добавлены.",
-	"twoStep.authenticatorOn": "Приложение-аутентификатор включено · осталось резервных кодов: {count}.",
-	"twoStep.authenticatorOff": "Приложение-аутентификатор выключено.",
+	"twoStep.authenticatorOn": "Настроено · осталось резервных кодов: {count}.",
+	"twoStep.authenticatorOff": "Не настроено.",
 	"common.save": "Сохранить",
-	"authError.passkeyOnlyPassword": "В этом аккаунте используются только ключи доступа. Отправьте ему ссылку для восстановления."
+	"authError.passkeyOnlyPassword": "В этом аккаунте используются только ключи доступа. Отправьте ему ссылку для восстановления.",
+	"passkey.check": "Проверить ключ доступа",
+	"passkey.justVerified": "Только что подтверждён",
+	"passkey.cantUse": "Не удаётся использовать ключ доступа?",
+	"twoStep.addMethodHint": "Добавьте ключ доступа или приложение-аутентификатор, чтобы включить это.",
+	"twoStep.passkeyTitle": "Ключ доступа",
+	"twoStep.managePasskeys": "Управление ключами доступа",
+	"twoStep.authenticatorTitle": "Приложение-аутентификатор"
 }

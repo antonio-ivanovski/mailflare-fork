@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Dostępne drugie kroki",
 	"twoStep.passkeysAvailable": "Klucze dostępu do potwierdzania logowania hasłem: {count}.",
 	"twoStep.noPasskeys": "Brak dodanych kluczy dostępu.",
-	"twoStep.authenticatorOn": "Aplikacja uwierzytelniająca jest włączona · pozostało kodów odzyskiwania: {count}.",
-	"twoStep.authenticatorOff": "Aplikacja uwierzytelniająca jest wyłączona.",
+	"twoStep.authenticatorOn": "Skonfigurowana · pozostało kodów odzyskiwania: {count}.",
+	"twoStep.authenticatorOff": "Nie skonfigurowano.",
 	"common.save": "Zapisz",
-	"authError.passkeyOnlyPassword": "To konto używa wyłącznie kluczy dostępu. Wyślij mu link odzyskiwania."
+	"authError.passkeyOnlyPassword": "To konto używa wyłącznie kluczy dostępu. Wyślij mu link odzyskiwania.",
+	"passkey.check": "Sprawdź klucz dostępu",
+	"passkey.justVerified": "Właśnie zweryfikowano",
+	"passkey.cantUse": "Nie możesz użyć klucza dostępu?",
+	"twoStep.addMethodHint": "Dodaj klucz dostępu lub aplikację uwierzytelniającą, aby to włączyć.",
+	"twoStep.passkeyTitle": "Klucz dostępu",
+	"twoStep.managePasskeys": "Zarządzaj kluczami dostępu",
+	"twoStep.authenticatorTitle": "Aplikacja uwierzytelniająca"
 }

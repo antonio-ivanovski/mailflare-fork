@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Kullanılabilir ikinci adımlar",
 	"twoStep.passkeysAvailable": "{count} geçiş anahtarı parolayla oturum açmayı onaylayabilir.",
 	"twoStep.noPasskeys": "Kayıtlı geçiş anahtarı yok.",
-	"twoStep.authenticatorOn": "Kimlik doğrulayıcı uygulama açık · {count} kurtarma kodu kaldı.",
-	"twoStep.authenticatorOff": "Kimlik doğrulayıcı uygulama kapalı.",
+	"twoStep.authenticatorOn": "Ayarlanmış · {count} kurtarma kodu kaldı.",
+	"twoStep.authenticatorOff": "Ayarlanmadı.",
 	"common.save": "Kaydet",
-	"authError.passkeyOnlyPassword": "Bu hesap yalnızca geçiş anahtarları kullanıyor. Bunun yerine ona bir kurtarma bağlantısı gönderin."
+	"authError.passkeyOnlyPassword": "Bu hesap yalnızca geçiş anahtarları kullanıyor. Bunun yerine ona bir kurtarma bağlantısı gönderin.",
+	"passkey.check": "Geçiş anahtarını denetle",
+	"passkey.justVerified": "Az önce doğrulandı",
+	"passkey.cantUse": "Geçiş anahtarınızı kullanamıyor musunuz?",
+	"twoStep.addMethodHint": "Bunu açmak için bir geçiş anahtarı veya kimlik doğrulayıcı uygulama ekleyin.",
+	"twoStep.passkeyTitle": "Geçiş anahtarı",
+	"twoStep.managePasskeys": "Geçiş anahtarlarını yönet",
+	"twoStep.authenticatorTitle": "Kimlik doğrulayıcı uygulama"
 }

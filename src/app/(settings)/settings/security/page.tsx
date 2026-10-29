@@ -21,7 +21,7 @@ export default async function SecuritySettingsPage() {
 					<h3 className="text-sm font-semibold text-neutral-900">{t("signIn.passwordTitle")}</h3>
 					<PasswordSettings />
 				</div>
-				<div className="space-y-4 border-t border-neutral-100 pt-6">
+				<div id="passkeys" className="scroll-mt-6 space-y-4 border-t border-neutral-100 pt-6">
 					<div>
 						<h3 className="text-sm font-semibold text-neutral-900">{t("passkey.settingsTitle")}</h3>
 						<p className="mt-1 text-sm text-neutral-500">{t("passkey.settingsDescription")}</p>
@@ -29,11 +29,7 @@ export default async function SecuritySettingsPage() {
 					<PasskeySettings />
 				</div>
 			</div>
-			<div className="space-y-4 rounded-3xl bg-white p-6">
-				<div>
-					<h2 className="text-lg font-semibold text-neutral-900">{t("twoStep.title")}</h2>
-					<p className="mt-1 text-sm text-neutral-500">{t("twoStep.description")}</p>
-				</div>
+			<div className="rounded-3xl bg-white p-6">
 				<TwoStepSettings />
 			</div>
 			<div className="space-y-4 rounded-3xl bg-white p-6">

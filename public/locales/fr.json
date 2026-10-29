@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Deuxièmes étapes disponibles",
 	"twoStep.passkeysAvailable": "{count} clés d'accès peuvent confirmer une connexion par mot de passe.",
 	"twoStep.noPasskeys": "Aucune clé d'accès enregistrée.",
-	"twoStep.authenticatorOn": "L'application d'authentification est activée · {count} codes de récupération restants.",
-	"twoStep.authenticatorOff": "L'application d'authentification est désactivée.",
+	"twoStep.authenticatorOn": "Configurée · {count} codes de récupération restants.",
+	"twoStep.authenticatorOff": "Non configurée.",
 	"common.save": "Enregistrer",
-	"authError.passkeyOnlyPassword": "Ce compte utilise uniquement des clés d'accès. Envoyez-lui plutôt un lien de récupération."
+	"authError.passkeyOnlyPassword": "Ce compte utilise uniquement des clés d'accès. Envoyez-lui plutôt un lien de récupération.",
+	"passkey.check": "Vérifier une clé d'accès",
+	"passkey.justVerified": "Vérifiée à l'instant",
+	"passkey.cantUse": "Impossible d'utiliser votre clé d'accès ?",
+	"twoStep.addMethodHint": "Ajoutez une clé d'accès ou une application d'authentification pour l'activer.",
+	"twoStep.passkeyTitle": "Clé d'accès",
+	"twoStep.managePasskeys": "Gérer les clés d'accès",
+	"twoStep.authenticatorTitle": "Application d'authentification"
 }

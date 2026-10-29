@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "利用可能な 2 番目のステップ",
 	"twoStep.passkeysAvailable": "パスキー {count} 個で、パスワードによるサインインを確認できます。",
 	"twoStep.noPasskeys": "パスキーが登録されていません。",
-	"twoStep.authenticatorOn": "認証アプリはオンです · リカバリーコード残り {count} 個",
-	"twoStep.authenticatorOff": "認証アプリはオフです。",
+	"twoStep.authenticatorOn": "設定済み · リカバリーコード残り {count} 個",
+	"twoStep.authenticatorOff": "未設定",
 	"common.save": "保存",
-	"authError.passkeyOnlyPassword": "このアカウントはパスキーのみを使用しています。代わりにリカバリーリンクを送信してください。"
+	"authError.passkeyOnlyPassword": "このアカウントはパスキーのみを使用しています。代わりにリカバリーリンクを送信してください。",
+	"passkey.check": "パスキーを確認",
+	"passkey.justVerified": "確認済み",
+	"passkey.cantUse": "パスキーを使用できませんか？",
+	"twoStep.addMethodHint": "有効にするには、パスキーまたは認証アプリを追加してください。",
+	"twoStep.passkeyTitle": "パスキー",
+	"twoStep.managePasskeys": "パスキーを管理",
+	"twoStep.authenticatorTitle": "認証アプリ"
 }

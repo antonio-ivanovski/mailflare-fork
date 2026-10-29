@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ലഭ്യമായ രണ്ടാം ഘട്ടങ്ങൾ",
 	"twoStep.passkeysAvailable": "{count} പാസ്‌കീകൾക്ക് പാസ്‌വേഡ് സൈൻ ഇൻ സ്ഥിരീകരിക്കാം.",
 	"twoStep.noPasskeys": "പാസ്‌കീകൾ രജിസ്റ്റർ ചെയ്തിട്ടില്ല.",
-	"twoStep.authenticatorOn": "ഓതന്റിക്കേറ്റർ ആപ്പ് ഓണാണ് · {count} വീണ്ടെടുക്കൽ കോഡുകൾ ബാക്കി.",
-	"twoStep.authenticatorOff": "ഓതന്റിക്കേറ്റർ ആപ്പ് ഓഫാണ്.",
+	"twoStep.authenticatorOn": "സെറ്റ് ചെയ്തു · {count} വീണ്ടെടുക്കൽ കോഡുകൾ ബാക്കി.",
+	"twoStep.authenticatorOff": "സെറ്റ് ചെയ്തിട്ടില്ല.",
 	"common.save": "സേവ് ചെയ്യുക",
-	"authError.passkeyOnlyPassword": "ഈ അക്കൗണ്ട് പാസ്‌കീകൾ മാത്രമാണ് ഉപയോഗിക്കുന്നത്. പകരം അതിന് വീണ്ടെടുക്കൽ ലിങ്ക് അയയ്ക്കുക."
+	"authError.passkeyOnlyPassword": "ഈ അക്കൗണ്ട് പാസ്‌കീകൾ മാത്രമാണ് ഉപയോഗിക്കുന്നത്. പകരം അതിന് വീണ്ടെടുക്കൽ ലിങ്ക് അയയ്ക്കുക.",
+	"passkey.check": "ഒരു പാസ്‌കീ പരിശോധിക്കുക",
+	"passkey.justVerified": "ഇപ്പോൾ സ്ഥിരീകരിച്ചു",
+	"passkey.cantUse": "നിങ്ങളുടെ പാസ്‌കീ ഉപയോഗിക്കാനാകുന്നില്ലേ?",
+	"twoStep.addMethodHint": "ഇത് ഓണാക്കാൻ പാസ്‌കീ അല്ലെങ്കിൽ ഓതന്റിക്കേറ്റർ ആപ്പ് ചേർക്കുക.",
+	"twoStep.passkeyTitle": "പാസ്‌കീ",
+	"twoStep.managePasskeys": "പാസ്‌കീകൾ മാനേജ് ചെയ്യുക",
+	"twoStep.authenticatorTitle": "ഓതന്റിക്കേറ്റർ ആപ്പ്"
 }

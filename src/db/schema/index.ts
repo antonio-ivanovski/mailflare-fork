@@ -897,7 +897,7 @@ export const webauthnChallenges = sqliteTable(
 		id: text("id").primaryKey(),
 		ceremonyHash: text("ceremony_hash").notNull().unique(),
 		challenge: text("challenge").notNull(),
-		purpose: text("purpose", { enum: ["login", "mfa", "register", "step_up", "enroll", "recovery"] }).notNull(),
+		purpose: text("purpose", { enum: ["login", "mfa", "register", "step_up", "check", "enroll", "recovery"] }).notNull(),
 		userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
 		bindingHash: text("binding_hash").notNull(),
 		expiresAt: timestamp("expires_at").notNull(),

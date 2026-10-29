@@ -9,7 +9,7 @@ const CEREMONY_MINUTES = 10;
 const MAX_BINDINGS = 6;
 const SEPARATOR = "~";
 
-export type WebAuthnPurpose = "login" | "mfa" | "register" | "step_up" | "enroll" | "recovery";
+export type WebAuthnPurpose = "login" | "mfa" | "register" | "step_up" | "check" | "enroll" | "recovery";
 
 export type WebAuthnChallenge = {
 	id: string;

@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Segundos passos disponíveis",
 	"twoStep.passkeysAvailable": "{count} chaves de acesso podem confirmar um início de sessão com palavra-passe.",
 	"twoStep.noPasskeys": "Nenhuma chave de acesso registada.",
-	"twoStep.authenticatorOn": "A aplicação de autenticação está ativada · {count} códigos de recuperação restantes.",
-	"twoStep.authenticatorOff": "A aplicação de autenticação está desativada.",
+	"twoStep.authenticatorOn": "Configurada · {count} códigos de recuperação restantes.",
+	"twoStep.authenticatorOff": "Não configurada.",
 	"common.save": "Guardar",
-	"authError.passkeyOnlyPassword": "Esta conta utiliza apenas chaves de acesso. Envie antes uma ligação de recuperação."
+	"authError.passkeyOnlyPassword": "Esta conta utiliza apenas chaves de acesso. Envie antes uma ligação de recuperação.",
+	"passkey.check": "Verificar uma chave de acesso",
+	"passkey.justVerified": "Verificada agora",
+	"passkey.cantUse": "Não consegue utilizar a sua chave de acesso?",
+	"twoStep.addMethodHint": "Adicione uma chave de acesso ou uma aplicação de autenticação para ativar isto.",
+	"twoStep.passkeyTitle": "Chave de acesso",
+	"twoStep.managePasskeys": "Gerir chaves de acesso",
+	"twoStep.authenticatorTitle": "Aplicação de autenticação"
 }

@@ -3,6 +3,7 @@ import { requestError } from "@/lib/http/client-error";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import type {
 	PasskeyAddResponse,
+	PasskeyCheckResponse,
 	PasskeyOptionsResponse,
 	RemovePasswordResponse,
 	SecurityStatus,
@@ -84,6 +85,26 @@ export async function addPasskey(name: string, stepUpToken: string): Promise<voi
 	});
 	const data = (await res.json()) as PasskeyAddResponse;
 	if (!res.ok) throw requestError(data, "Could not add the passkey");
+}
+
+/** Asks the browser to present one saved passkey so the list can identify it. */
+export async function checkPasskey(): Promise<string> {
+	const optionsRes = await authFetch("/api/settings/passkeys/check/options", {
+		method: "POST",
+		redirectOnUnauthorized: false,
+	});
+	const options = (await optionsRes.json()) as PasskeyOptionsResponse;
+	if (!optionsRes.ok || !options.options || !options.ceremonyToken) throw requestError(options, "Could not start the passkey check");
+	const response = await startAuthentication({ optionsJSON: options.options as Parameters<typeof startAuthentication>[0]["optionsJSON"] });
+	const res = await authFetch("/api/settings/passkeys/check/verify", {
+		method: "POST",
+		redirectOnUnauthorized: false,
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ ceremonyToken: options.ceremonyToken, response }),
+	});
+	const data = (await res.json()) as PasskeyCheckResponse;
+	if (!res.ok || !data.passkeyId) throw requestError(data, "Could not check the passkey");
+	return data.passkeyId;
 }
 
 export async function renamePasskey(id: string, name: string): Promise<void> {

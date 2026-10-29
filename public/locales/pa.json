@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ਉਪਲਬਧ ਦੂਜੇ ਕਦਮ",
 	"twoStep.passkeysAvailable": "{count} ਪਾਸਕੀਆਂ ਪਾਸਵਰਡ ਵਾਲੇ ਸਾਈਨ ਇਨ ਦੀ ਪੁਸ਼ਟੀ ਕਰ ਸਕਦੀਆਂ ਹਨ।",
 	"twoStep.noPasskeys": "ਕੋਈ ਪਾਸਕੀ ਦਰਜ ਨਹੀਂ।",
-	"twoStep.authenticatorOn": "ਪ੍ਰਮਾਣੀਕਰਨ ਐਪ ਚਾਲੂ ਹੈ · {count} ਰਿਕਵਰੀ ਕੋਡ ਬਾਕੀ।",
-	"twoStep.authenticatorOff": "ਪ੍ਰਮਾਣੀਕਰਨ ਐਪ ਬੰਦ ਹੈ।",
+	"twoStep.authenticatorOn": "ਸੈੱਟ ਹੈ · {count} ਰਿਕਵਰੀ ਕੋਡ ਬਾਕੀ।",
+	"twoStep.authenticatorOff": "ਸੈੱਟ ਨਹੀਂ ਹੈ।",
 	"common.save": "ਸੰਭਾਲੋ",
-	"authError.passkeyOnlyPassword": "ਇਹ ਖਾਤਾ ਸਿਰਫ਼ ਪਾਸਕੀਆਂ ਵਰਤਦਾ ਹੈ। ਇਸਦੀ ਥਾਂ ਇਸਨੂੰ ਰਿਕਵਰੀ ਲਿੰਕ ਭੇਜੋ।"
+	"authError.passkeyOnlyPassword": "ਇਹ ਖਾਤਾ ਸਿਰਫ਼ ਪਾਸਕੀਆਂ ਵਰਤਦਾ ਹੈ। ਇਸਦੀ ਥਾਂ ਇਸਨੂੰ ਰਿਕਵਰੀ ਲਿੰਕ ਭੇਜੋ।",
+	"passkey.check": "ਪਾਸਕੀ ਜਾਂਚੋ",
+	"passkey.justVerified": "ਹੁਣੇ ਪੁਸ਼ਟੀ ਹੋਈ",
+	"passkey.cantUse": "ਆਪਣੀ ਪਾਸਕੀ ਵਰਤ ਨਹੀਂ ਸਕਦੇ?",
+	"twoStep.addMethodHint": "ਇਹ ਚਾਲੂ ਕਰਨ ਲਈ ਪਾਸਕੀ ਜਾਂ ਪ੍ਰਮਾਣੀਕਰਨ ਐਪ ਸ਼ਾਮਲ ਕਰੋ।",
+	"twoStep.passkeyTitle": "ਪਾਸਕੀ",
+	"twoStep.managePasskeys": "ਪਾਸਕੀਆਂ ਪ੍ਰਬੰਧਿਤ ਕਰੋ",
+	"twoStep.authenticatorTitle": "ਪ੍ਰਮਾਣੀਕਰਨ ਐਪ"
 }

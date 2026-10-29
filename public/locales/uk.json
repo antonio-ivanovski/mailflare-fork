@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Доступні другі кроки",
 	"twoStep.passkeysAvailable": "Ключі доступу для підтвердження входу за паролем: {count}.",
 	"twoStep.noPasskeys": "Ключів доступу не додано.",
-	"twoStep.authenticatorOn": "Застосунок автентифікації ввімкнено · залишилося кодів відновлення: {count}.",
-	"twoStep.authenticatorOff": "Застосунок автентифікації вимкнено.",
+	"twoStep.authenticatorOn": "Налаштовано · залишилося кодів відновлення: {count}.",
+	"twoStep.authenticatorOff": "Не налаштовано.",
 	"common.save": "Зберегти",
-	"authError.passkeyOnlyPassword": "У цьому обліковому записі використовуються лише ключі доступу. Надішліть йому посилання для відновлення."
+	"authError.passkeyOnlyPassword": "У цьому обліковому записі використовуються лише ключі доступу. Надішліть йому посилання для відновлення.",
+	"passkey.check": "Перевірити ключ доступу",
+	"passkey.justVerified": "Щойно підтверджено",
+	"passkey.cantUse": "Не вдається використати ключ доступу?",
+	"twoStep.addMethodHint": "Додайте ключ доступу або застосунок автентифікації, щоб увімкнути це.",
+	"twoStep.passkeyTitle": "Ключ доступу",
+	"twoStep.managePasskeys": "Керувати ключами доступу",
+	"twoStep.authenticatorTitle": "Застосунок автентифікації"
 }

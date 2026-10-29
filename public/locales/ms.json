@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Langkah kedua yang tersedia",
 	"twoStep.passkeysAvailable": "{count} passkey boleh mengesahkan log masuk dengan kata laluan.",
 	"twoStep.noPasskeys": "Tiada passkey didaftarkan.",
-	"twoStep.authenticatorOn": "Apl pengesah dihidupkan · {count} kod pemulihan tinggal.",
-	"twoStep.authenticatorOff": "Apl pengesah dimatikan.",
+	"twoStep.authenticatorOn": "Telah disediakan · {count} kod pemulihan tinggal.",
+	"twoStep.authenticatorOff": "Belum disediakan.",
 	"common.save": "Simpan",
-	"authError.passkeyOnlyPassword": "Akaun ini hanya menggunakan passkey. Hantar pautan pemulihan kepadanya."
+	"authError.passkeyOnlyPassword": "Akaun ini hanya menggunakan passkey. Hantar pautan pemulihan kepadanya.",
+	"passkey.check": "Semak passkey",
+	"passkey.justVerified": "Baru disahkan",
+	"passkey.cantUse": "Tidak dapat menggunakan passkey anda?",
+	"twoStep.addMethodHint": "Tambah passkey atau apl pengesah untuk menghidupkannya.",
+	"twoStep.passkeyTitle": "Passkey",
+	"twoStep.managePasskeys": "Urus passkey",
+	"twoStep.authenticatorTitle": "Apl pengesah"
 }

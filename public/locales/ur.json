@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "دستیاب دوسرے مراحل",
 	"twoStep.passkeysAvailable": "{count} پاس کیز پاس ورڈ کے ساتھ سائن ان کی تصدیق کر سکتی ہیں۔",
 	"twoStep.noPasskeys": "کوئی پاس کی رجسٹرڈ نہیں۔",
-	"twoStep.authenticatorOn": "تصدیقی ایپ فعال ہے · {count} بازیابی کوڈز باقی ہیں۔",
-	"twoStep.authenticatorOff": "تصدیقی ایپ غیر فعال ہے۔",
+	"twoStep.authenticatorOn": "سیٹ اپ ہے · {count} بازیابی کوڈز باقی ہیں۔",
+	"twoStep.authenticatorOff": "سیٹ اپ نہیں ہے۔",
 	"common.save": "محفوظ کریں",
-	"authError.passkeyOnlyPassword": "یہ اکاؤنٹ صرف پاس کیز استعمال کرتا ہے۔ اس کے بجائے اسے بازیابی لنک بھیجیں۔"
+	"authError.passkeyOnlyPassword": "یہ اکاؤنٹ صرف پاس کیز استعمال کرتا ہے۔ اس کے بجائے اسے بازیابی لنک بھیجیں۔",
+	"passkey.check": "پاس کی جانچیں",
+	"passkey.justVerified": "ابھی تصدیق ہوئی",
+	"passkey.cantUse": "اپنی پاس کی استعمال نہیں کر سکتے؟",
+	"twoStep.addMethodHint": "اسے فعال کرنے کے لیے پاس کی یا تصدیقی ایپ شامل کریں۔",
+	"twoStep.passkeyTitle": "پاس کی",
+	"twoStep.managePasskeys": "پاس کیز کا انتظام کریں",
+	"twoStep.authenticatorTitle": "تصدیقی ایپ"
 }

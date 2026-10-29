@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ઉપલબ્ધ બીજાં પગલાં",
 	"twoStep.passkeysAvailable": "{count} પાસકી પાસવર્ડથી સાઇન ઇનની પુષ્ટિ કરી શકે છે.",
 	"twoStep.noPasskeys": "કોઈ પાસકી નોંધાયેલી નથી.",
-	"twoStep.authenticatorOn": "પ્રમાણીકરણ ઍપ ચાલુ છે · {count} પુનઃપ્રાપ્તિ કોડ બાકી છે.",
-	"twoStep.authenticatorOff": "પ્રમાણીકરણ ઍપ બંધ છે.",
+	"twoStep.authenticatorOn": "સેટ અપ છે · {count} પુનઃપ્રાપ્તિ કોડ બાકી.",
+	"twoStep.authenticatorOff": "સેટ કરેલ નથી.",
 	"common.save": "સાચવો",
-	"authError.passkeyOnlyPassword": "આ એકાઉન્ટ ફક્ત પાસકી વાપરે છે. તેના બદલે તેને પુનઃપ્રાપ્તિ લિંક મોકલો."
+	"authError.passkeyOnlyPassword": "આ એકાઉન્ટ ફક્ત પાસકી વાપરે છે. તેના બદલે તેને પુનઃપ્રાપ્તિ લિંક મોકલો.",
+	"passkey.check": "પાસકી તપાસો",
+	"passkey.justVerified": "હમણાં જ ચકાસાયું",
+	"passkey.cantUse": "તમારી પાસકી વાપરી શકતા નથી?",
+	"twoStep.addMethodHint": "આ ચાલુ કરવા માટે પાસકી અથવા પ્રમાણીકરણ ઍપ ઉમેરો.",
+	"twoStep.passkeyTitle": "પાસકી",
+	"twoStep.managePasskeys": "પાસકી મેનેજ કરો",
+	"twoStep.authenticatorTitle": "પ્રમાણીકરણ ઍપ"
 }

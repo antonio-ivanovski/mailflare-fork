@@ -37,6 +37,13 @@ export type PasskeyAddResponse = {
 	code?: string;
 };
 
+export type PasskeyCheckResponse = {
+	ok?: boolean;
+	passkeyId?: string;
+	error?: string;
+	code?: string;
+};
+
 export type RemovePasswordResponse = {
 	ok?: boolean;
 	error?: string;

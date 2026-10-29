@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "可用的第二步",
 	"twoStep.passkeysAvailable": "{count} 个通行密钥可用于确认密码登录。",
 	"twoStep.noPasskeys": "未注册通行密钥。",
-	"twoStep.authenticatorOn": "验证器应用已开启 · 剩余 {count} 个恢复码",
-	"twoStep.authenticatorOff": "验证器应用已关闭。",
+	"twoStep.authenticatorOn": "已设置 · 剩余 {count} 个恢复码。",
+	"twoStep.authenticatorOff": "未设置。",
 	"common.save": "保存",
-	"authError.passkeyOnlyPassword": "此账户仅使用通行密钥。请改为向其发送恢复链接。"
+	"authError.passkeyOnlyPassword": "此账户仅使用通行密钥。请改为向其发送恢复链接。",
+	"passkey.check": "检查通行密钥",
+	"passkey.justVerified": "刚刚验证",
+	"passkey.cantUse": "无法使用通行密钥？",
+	"twoStep.addMethodHint": "添加通行密钥或验证器应用以开启此功能。",
+	"twoStep.passkeyTitle": "通行密钥",
+	"twoStep.managePasskeys": "管理通行密钥",
+	"twoStep.authenticatorTitle": "验证器应用"
 }

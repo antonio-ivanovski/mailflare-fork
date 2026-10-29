@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "उपलब्ध दुसऱ्या पायऱ्या",
 	"twoStep.passkeysAvailable": "{count} पासक्या पासवर्डने साइन इन करण्याची पुष्टी करू शकतात.",
 	"twoStep.noPasskeys": "कोणतीही पासकी नोंदवलेली नाही.",
-	"twoStep.authenticatorOn": "ऑथेंटिकेटर अ‍ॅप सुरू आहे · {count} रिकव्हरी कोड शिल्लक.",
-	"twoStep.authenticatorOff": "ऑथेंटिकेटर अ‍ॅप बंद आहे.",
+	"twoStep.authenticatorOn": "सेट केले आहे · {count} रिकव्हरी कोड शिल्लक.",
+	"twoStep.authenticatorOff": "सेट केलेले नाही.",
 	"common.save": "जतन करा",
-	"authError.passkeyOnlyPassword": "हे खाते फक्त पासक्या वापरते. त्याऐवजी त्याला रिकव्हरी लिंक पाठवा."
+	"authError.passkeyOnlyPassword": "हे खाते फक्त पासक्या वापरते. त्याऐवजी त्याला रिकव्हरी लिंक पाठवा.",
+	"passkey.check": "पासकी तपासा",
+	"passkey.justVerified": "आत्ताच पडताळले",
+	"passkey.cantUse": "तुमची पासकी वापरू शकत नाही?",
+	"twoStep.addMethodHint": "हे सुरू करण्यासाठी पासकी किंवा ऑथेंटिकेटर अ‍ॅप जोडा.",
+	"twoStep.passkeyTitle": "पासकी",
+	"twoStep.managePasskeys": "पासक्या व्यवस्थापित करा",
+	"twoStep.authenticatorTitle": "ऑथेंटिकेटर अ‍ॅप"
 }

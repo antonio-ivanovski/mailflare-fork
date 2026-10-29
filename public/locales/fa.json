@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "مراحل دوم در دسترس",
 	"twoStep.passkeysAvailable": "{count} کلید عبور می‌تواند ورود با گذرواژه را تأیید کند.",
 	"twoStep.noPasskeys": "هیچ کلید عبوری ثبت نشده است.",
-	"twoStep.authenticatorOn": "برنامه احراز هویت روشن است · {count} کد بازیابی باقی مانده است.",
-	"twoStep.authenticatorOff": "برنامه احراز هویت خاموش است.",
+	"twoStep.authenticatorOn": "تنظیم شده · {count} کد بازیابی باقی مانده است.",
+	"twoStep.authenticatorOff": "تنظیم نشده است.",
 	"common.save": "ذخیره",
-	"authError.passkeyOnlyPassword": "این حساب فقط از کلیدهای عبور استفاده می‌کند. به‌جای آن برایش پیوند بازیابی بفرستید."
+	"authError.passkeyOnlyPassword": "این حساب فقط از کلیدهای عبور استفاده می‌کند. به‌جای آن برایش پیوند بازیابی بفرستید.",
+	"passkey.check": "بررسی کلید عبور",
+	"passkey.justVerified": "همین حالا تأیید شد",
+	"passkey.cantUse": "نمی‌توانید از کلید عبور خود استفاده کنید؟",
+	"twoStep.addMethodHint": "برای روشن کردن این گزینه، یک کلید عبور یا برنامه احراز هویت اضافه کنید.",
+	"twoStep.passkeyTitle": "کلید عبور",
+	"twoStep.managePasskeys": "مدیریت کلیدهای عبور",
+	"twoStep.authenticatorTitle": "برنامه احراز هویت"
 }

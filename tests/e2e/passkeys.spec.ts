@@ -82,14 +82,27 @@ test("passkey lifecycle: add, rename, sign in, second step, password removal", a
 	await expect(page.getByText("Playwright passkey")).toBeVisible({ timeout: 30_000 });
 	await setPresence(page, false);
 
+	// A check identifies the saved credential without signing in again.
+	await page.getByRole("button", { name: "Check a passkey" }).click();
+	await setPresence(page, true);
+	await expect(page.getByText("Just verified", { exact: true })).toBeVisible({ timeout: 30_000 });
+	await setPresence(page, false);
+
+	// The two-step section exposes each method as its own row.
+	await expect(page.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Passkey", exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Authenticator app" })).toBeVisible();
+	await expect(page.getByText("Lost every passkey?")).toHaveCount(0);
+
 	// Rename the credential without another browser ceremony.
 	await page.getByRole("button", { name: "Rename Playwright passkey" }).click();
 	await page.getByLabel("Passkey name", { exact: true }).fill("Renamed passkey");
 	await page.getByRole("button", { name: "Save" }).click();
-	await expect(page.getByText("Renamed passkey")).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText("Renamed passkey", { exact: true })).toBeVisible({ timeout: 30_000 });
 
 	// Independent passkey sign-in.
 	await logout(page);
+	await expect(page.getByText("Can't use your passkey?")).toBeVisible();
 	await setPresence(page, false);
 	await page.getByRole("button", { name: "Sign in with a passkey" }).click();
 	await setPresence(page, true);

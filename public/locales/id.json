@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Langkah kedua yang tersedia",
 	"twoStep.passkeysAvailable": "{count} passkey dapat mengonfirmasi masuk dengan kata sandi.",
 	"twoStep.noPasskeys": "Tidak ada passkey yang terdaftar.",
-	"twoStep.authenticatorOn": "Aplikasi autentikator aktif · sisa {count} kode pemulihan.",
-	"twoStep.authenticatorOff": "Aplikasi autentikator nonaktif.",
+	"twoStep.authenticatorOn": "Sudah disiapkan · sisa {count} kode pemulihan.",
+	"twoStep.authenticatorOff": "Belum disiapkan.",
 	"common.save": "Simpan",
-	"authError.passkeyOnlyPassword": "Akun ini hanya menggunakan passkey. Kirimkan tautan pemulihan kepadanya."
+	"authError.passkeyOnlyPassword": "Akun ini hanya menggunakan passkey. Kirimkan tautan pemulihan kepadanya.",
+	"passkey.check": "Periksa passkey",
+	"passkey.justVerified": "Baru saja diverifikasi",
+	"passkey.cantUse": "Tidak bisa menggunakan passkey?",
+	"twoStep.addMethodHint": "Tambahkan passkey atau aplikasi autentikator untuk mengaktifkannya.",
+	"twoStep.passkeyTitle": "Passkey",
+	"twoStep.managePasskeys": "Kelola passkey",
+	"twoStep.authenticatorTitle": "Aplikasi autentikator"
 }

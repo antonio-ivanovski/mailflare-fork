@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Các bước thứ hai khả dụng",
 	"twoStep.passkeysAvailable": "{count} passkey có thể xác nhận đăng nhập bằng mật khẩu.",
 	"twoStep.noPasskeys": "Chưa đăng ký passkey nào.",
-	"twoStep.authenticatorOn": "Ứng dụng xác thực đang bật · còn {count} mã khôi phục.",
-	"twoStep.authenticatorOff": "Ứng dụng xác thực đang tắt.",
+	"twoStep.authenticatorOn": "Đã thiết lập · còn {count} mã khôi phục.",
+	"twoStep.authenticatorOff": "Chưa thiết lập.",
 	"common.save": "Lưu",
-	"authError.passkeyOnlyPassword": "Tài khoản này chỉ dùng passkey. Hãy gửi cho nó một liên kết khôi phục."
+	"authError.passkeyOnlyPassword": "Tài khoản này chỉ dùng passkey. Hãy gửi cho nó một liên kết khôi phục.",
+	"passkey.check": "Kiểm tra passkey",
+	"passkey.justVerified": "Vừa xác minh",
+	"passkey.cantUse": "Không thể dùng passkey?",
+	"twoStep.addMethodHint": "Thêm passkey hoặc ứng dụng xác thực để bật tính năng này.",
+	"twoStep.passkeyTitle": "Passkey",
+	"twoStep.managePasskeys": "Quản lý passkey",
+	"twoStep.authenticatorTitle": "Ứng dụng xác thực"
 }

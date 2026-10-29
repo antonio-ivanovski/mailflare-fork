@@ -307,7 +307,14 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
           <KeyRound className="h-4 w-4" />
           {t("passkey.signIn")}
         </Button>
-        <p className="text-center text-xs leading-5 text-neutral-500">{t("passkey.lostAllHint")}</p>
+        <details className="text-center">
+          <summary className="cursor-pointer list-none text-xs font-medium text-neutral-500 underline decoration-neutral-300 underline-offset-2 hover:text-neutral-800 [&::-webkit-details-marker]:hidden">
+            {t("passkey.cantUse")}
+          </summary>
+          <p className="mt-2 rounded-2xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-left text-xs leading-5 text-neutral-500">
+            {t("passkey.lostAllHint")}
+          </p>
+        </details>
       </form>
     </AuthShell>
   );

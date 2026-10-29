@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "उपलब्ध दूसरे चरण",
 	"twoStep.passkeysAvailable": "{count} पासकी पासवर्ड से साइन इन की पुष्टि कर सकती हैं।",
 	"twoStep.noPasskeys": "कोई पासकी पंजीकृत नहीं है।",
-	"twoStep.authenticatorOn": "ऑथेंटिकेटर ऐप चालू है · {count} रिकवरी कोड शेष हैं।",
-	"twoStep.authenticatorOff": "ऑथेंटिकेटर ऐप बंद है।",
+	"twoStep.authenticatorOn": "सेट है · {count} रिकवरी कोड शेष।",
+	"twoStep.authenticatorOff": "सेट नहीं है।",
 	"common.save": "सहेजें",
-	"authError.passkeyOnlyPassword": "यह खाता केवल पासकी का उपयोग करता है। इसके बजाय इसे रिकवरी लिंक भेजें।"
+	"authError.passkeyOnlyPassword": "यह खाता केवल पासकी का उपयोग करता है। इसके बजाय इसे रिकवरी लिंक भेजें।",
+	"passkey.check": "पासकी जाँचें",
+	"passkey.justVerified": "अभी सत्यापित",
+	"passkey.cantUse": "अपनी पासकी का उपयोग नहीं कर पा रहे हैं?",
+	"twoStep.addMethodHint": "इसे चालू करने के लिए पासकी या ऑथेंटिकेटर ऐप जोड़ें।",
+	"twoStep.passkeyTitle": "पासकी",
+	"twoStep.managePasskeys": "पासकी प्रबंधित करें",
+	"twoStep.authenticatorTitle": "ऑथेंटिकेटर ऐप"
 }

@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ขั้นตอนที่สองที่ใช้ได้",
 	"twoStep.passkeysAvailable": "พาสคีย์ {count} รายการยืนยันการลงชื่อเข้าใช้ด้วยรหัสผ่านได้",
 	"twoStep.noPasskeys": "ยังไม่ได้ลงทะเบียนพาสคีย์",
-	"twoStep.authenticatorOn": "แอปยืนยันตัวตนเปิดอยู่ · เหลือรหัสกู้คืน {count} รหัส",
-	"twoStep.authenticatorOff": "แอปยืนยันตัวตนปิดอยู่",
+	"twoStep.authenticatorOn": "ตั้งค่าแล้ว · เหลือรหัสกู้คืน {count} รหัส",
+	"twoStep.authenticatorOff": "ยังไม่ได้ตั้งค่า",
 	"common.save": "บันทึก",
-	"authError.passkeyOnlyPassword": "บัญชีนี้ใช้พาสคีย์เท่านั้น ส่งลิงก์กู้คืนให้แทน"
+	"authError.passkeyOnlyPassword": "บัญชีนี้ใช้พาสคีย์เท่านั้น ส่งลิงก์กู้คืนให้แทน",
+	"passkey.check": "ตรวจสอบพาสคีย์",
+	"passkey.justVerified": "เพิ่งตรวจสอบแล้ว",
+	"passkey.cantUse": "ใช้พาสคีย์ของคุณไม่ได้หรือ",
+	"twoStep.addMethodHint": "เพิ่มพาสคีย์หรือแอปยืนยันตัวตนเพื่อเปิดใช้งาน",
+	"twoStep.passkeyTitle": "พาสคีย์",
+	"twoStep.managePasskeys": "จัดการพาสคีย์",
+	"twoStep.authenticatorTitle": "แอปยืนยันตัวตน"
 }

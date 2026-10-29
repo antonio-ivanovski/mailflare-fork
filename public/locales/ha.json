@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Matakan na biyu da ke akwai",
 	"twoStep.passkeysAvailable": "Maɓallan shiga {count} za su iya tabbatar da shiga da kalmar sirri.",
 	"twoStep.noPasskeys": "Ba a yi rajistar kowane maɓallin shiga ba.",
-	"twoStep.authenticatorOn": "Manhajar tabbatarwa a kunne take · an rage lambobin dawo da asusu {count}.",
-	"twoStep.authenticatorOff": "Manhajar tabbatarwa a kashe take.",
+	"twoStep.authenticatorOn": "An saita · an rage lambobin dawo da asusu {count}.",
+	"twoStep.authenticatorOff": "Ba a saita ba.",
 	"common.save": "Ajiye",
-	"authError.passkeyOnlyPassword": "Wannan asusun yana amfani da maɓallan shiga kaɗai. A maimakon haka, aika masa da hanyar dawo da asusu."
+	"authError.passkeyOnlyPassword": "Wannan asusun yana amfani da maɓallan shiga kaɗai. A maimakon haka, aika masa da hanyar dawo da asusu.",
+	"passkey.check": "Duba maɓallin shiga",
+	"passkey.justVerified": "An tabbatar yanzu",
+	"passkey.cantUse": "Ba za ka iya amfani da maɓallin shigarka ba?",
+	"twoStep.addMethodHint": "Ƙara maɓallin shiga ko manhajar tabbatarwa don kunna wannan.",
+	"twoStep.passkeyTitle": "Maɓallin shiga",
+	"twoStep.managePasskeys": "Sarrafa maɓallan shiga",
+	"twoStep.authenticatorTitle": "Manhajar tabbatarwa"
 }

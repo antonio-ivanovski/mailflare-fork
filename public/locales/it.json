@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Secondi passaggi disponibili",
 	"twoStep.passkeysAvailable": "{count} chiavi di accesso possono confermare un accesso con password.",
 	"twoStep.noPasskeys": "Nessuna chiave di accesso registrata.",
-	"twoStep.authenticatorOn": "L'app di autenticazione è attiva · {count} codici di recupero rimasti.",
-	"twoStep.authenticatorOff": "L'app di autenticazione è disattivata.",
+	"twoStep.authenticatorOn": "Configurata · {count} codici di recupero rimasti.",
+	"twoStep.authenticatorOff": "Non configurata.",
 	"common.save": "Salva",
-	"authError.passkeyOnlyPassword": "Questo account usa solo chiavi di accesso. Invia invece un link di recupero."
+	"authError.passkeyOnlyPassword": "Questo account usa solo chiavi di accesso. Invia invece un link di recupero.",
+	"passkey.check": "Verifica una chiave di accesso",
+	"passkey.justVerified": "Appena verificata",
+	"passkey.cantUse": "Non riesci a usare la chiave di accesso?",
+	"twoStep.addMethodHint": "Aggiungi una chiave di accesso o un'app di autenticazione per attivarlo.",
+	"twoStep.passkeyTitle": "Chiave di accesso",
+	"twoStep.managePasskeys": "Gestisci chiavi di accesso",
+	"twoStep.authenticatorTitle": "App di autenticazione"
 }

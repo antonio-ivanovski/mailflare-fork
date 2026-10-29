@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, ShieldCheck, ShieldOff } from "@/components/icons";
+import { Copy, KeyRound, Smartphone } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,7 +36,6 @@ function RecoveryCodesList({ codes }: { codes: string[] }) {
 				<Copy className="h-4 w-4" />
 				{copied ? t("common.copied") : t("mfa.copyCodes")}
 			</Button>
-			<p className="text-xs text-neutral-500">{t("mfa.codesHint")}</p>
 		</div>
 	);
 }
@@ -57,7 +56,17 @@ export function TwoStepSettings() {
 	const [code, setCode] = useState("");
 	const [codes, setCodes] = useState<string[] | null>(null);
 
-	if (!status) return <p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("mfa.loadFailed") : t("mfa.loading")}</p>;
+	if (!status) {
+		return (
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold text-neutral-900">{t("twoStep.title")}</h2>
+					<p className="mt-1 text-sm text-neutral-500">{t("twoStep.description")}</p>
+				</div>
+				<p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("mfa.loadFailed") : t("mfa.loading")}</p>
+			</div>
+		);
+	}
 
 	const hasAnyFactor = status.passkeys.length > 0 || status.totpEnabled;
 	const actionForPending = pending === "enroll"
@@ -104,50 +113,71 @@ export function TwoStepSettings() {
 	}
 
 	return (
-		<div className="space-y-4">
-			<div className="flex items-start justify-between gap-4 rounded-2xl border border-neutral-100 p-4">
-				<div>
-					<p className="text-sm font-medium text-neutral-900">{t("twoStep.requireTitle")}</p>
-					<p className="mt-1 text-xs leading-5 text-neutral-500">
-						{status.passwordSet ? t("twoStep.requireDescription") : t("twoStep.passwordlessDescription")}
-					</p>
+		<div className="space-y-5">
+			<div className="flex items-start justify-between gap-4">
+				<div className="min-w-0">
+					<h2 className="text-lg font-semibold text-neutral-900">{t("twoStep.title")}</h2>
+					<p className="mt-1 text-sm text-neutral-500">{status.passwordSet ? t("twoStep.description") : t("twoStep.passwordlessDescription")}</p>
 				</div>
-				<Switch
-					checked={status.requireSecondFactor}
-					disabled={busy || !status.passwordSet || (!hasAnyFactor && !status.requireSecondFactor)}
-					onCheckedChange={(enabled) => setPending(enabled ? "toggle-on" : "toggle-off")}
-					aria-label={t("twoStep.requireTitle")}
-				/>
-			</div>
-
-			<div className="space-y-3 rounded-2xl bg-neutral-50 p-4">
-				<p className="text-sm font-medium text-neutral-900">{t("twoStep.methodsTitle")}</p>
-				<div className="flex items-start gap-3">
-					<ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" />
-					<p className="text-sm text-neutral-600">
-						{status.passkeys.length > 0 ? t("twoStep.passkeysAvailable", { count: status.passkeys.length }) : t("twoStep.noPasskeys")}
-					</p>
-				</div>
-				<div className="flex items-start gap-3">
-					{status.totpEnabled ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-600" /> : <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />}
-					<p className="text-sm text-neutral-600">
-						{status.totpEnabled
-							? t("twoStep.authenticatorOn", { count: status.recoveryCodesLeft })
-							: t("twoStep.authenticatorOff")}
-					</p>
-				</div>
-			</div>
-
-			<div className="flex flex-wrap gap-3">
-				{status.totpEnabled ? (
-					<>
-						<Button variant="outline" onClick={() => setPending("codes")} disabled={busy}>{t("mfa.newRecoveryCodes")}</Button>
-						<Button variant="outline" onClick={() => setPending("disable")} disabled={busy}>{t("mfa.turnOff")}</Button>
-					</>
-				) : (
-					<Button onClick={() => setPending("enroll")} disabled={busy}>{t("mfa.turnOn")}</Button>
+				{status.passwordSet && (
+					<Switch
+						checked={status.requireSecondFactor}
+						disabled={busy || (!hasAnyFactor && !status.requireSecondFactor)}
+						onCheckedChange={(enabled) => setPending(enabled ? "toggle-on" : "toggle-off")}
+						aria-label={t("twoStep.requireTitle")}
+					/>
 				)}
 			</div>
+
+			{status.passwordSet && !hasAnyFactor && (
+				<p className="text-xs leading-5 text-neutral-500">{t("twoStep.addMethodHint")}</p>
+			)}
+
+			{/* A passwordless account has no password sign-in to protect with a code.
+			    Keep an already-enabled authenticator visible so it can be turned off. */}
+			{(status.passwordSet || status.totpEnabled) && (
+				<div className="divide-y divide-neutral-100 rounded-2xl border border-neutral-100">
+					{status.passwordSet && (
+						<div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+							<div className="flex items-start gap-3">
+								<KeyRound className={`mt-0.5 h-5 w-5 shrink-0 ${status.passkeys.length > 0 ? "text-green-600" : "text-neutral-400"}`} />
+								<div>
+									<h3 className="text-sm font-semibold text-neutral-900">{t("twoStep.passkeyTitle")}</h3>
+									<p className="mt-1 text-sm text-neutral-500">
+										{status.passkeys.length > 0 ? t("twoStep.passkeysAvailable", { count: status.passkeys.length }) : t("twoStep.noPasskeys")}
+									</p>
+								</div>
+							</div>
+							<Button asChild variant="outline" size="sm" className="w-fit">
+								<a href="#passkeys">{t("twoStep.managePasskeys")}</a>
+							</Button>
+						</div>
+					)}
+					<div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-start gap-3">
+							<Smartphone className={`mt-0.5 h-5 w-5 shrink-0 ${status.totpEnabled ? "text-green-600" : "text-neutral-400"}`} />
+							<div>
+								<h3 className="text-sm font-semibold text-neutral-900">{t("twoStep.authenticatorTitle")}</h3>
+								<p className="mt-1 text-sm text-neutral-500">
+									{status.totpEnabled
+										? t("twoStep.authenticatorOn", { count: status.recoveryCodesLeft })
+										: t("twoStep.authenticatorOff")}
+								</p>
+							</div>
+						</div>
+						<div className="flex flex-wrap items-center gap-2">
+							{status.totpEnabled ? (
+								<>
+									<Button variant="outline" size="sm" onClick={() => setPending("codes")} disabled={busy}>{t("mfa.newRecoveryCodes")}</Button>
+									<Button variant="ghost" size="sm" onClick={() => setPending("disable")} disabled={busy}>{t("mfa.turnOff")}</Button>
+								</>
+							) : (
+								<Button size="sm" onClick={() => setPending("enroll")} disabled={busy}>{t("mfa.turnOn")}</Button>
+							)}
+						</div>
+					</div>
+				</div>
+			)}
 
 			{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 

@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Hatua za pili zinazopatikana",
 	"twoStep.passkeysAvailable": "Funguo {count} za kuingia zinaweza kuthibitisha kuingia kwa nenosiri.",
 	"twoStep.noPasskeys": "Hakuna funguo za kuingia zilizosajiliwa.",
-	"twoStep.authenticatorOn": "Programu ya uthibitishaji imewashwa · misimbo {count} ya kurejesha imebaki.",
-	"twoStep.authenticatorOff": "Programu ya uthibitishaji imezimwa.",
+	"twoStep.authenticatorOn": "Imesanidiwa · misimbo {count} ya kurejesha imebaki.",
+	"twoStep.authenticatorOff": "Haijasanidiwa.",
 	"common.save": "Hifadhi",
-	"authError.passkeyOnlyPassword": "Akaunti hii inatumia funguo za kuingia pekee. Badala yake, tuma kiungo cha kurejesha."
+	"authError.passkeyOnlyPassword": "Akaunti hii inatumia funguo za kuingia pekee. Badala yake, tuma kiungo cha kurejesha.",
+	"passkey.check": "Angalia ufunguo wa kuingia",
+	"passkey.justVerified": "Umethibitishwa sasa",
+	"passkey.cantUse": "Huwezi kutumia ufunguo wako wa kuingia?",
+	"twoStep.addMethodHint": "Ongeza ufunguo wa kuingia au programu ya uthibitishaji ili kuwasha hii.",
+	"twoStep.passkeyTitle": "Ufunguo wa kuingia",
+	"twoStep.managePasskeys": "Dhibiti funguo za kuingia",
+	"twoStep.authenticatorTitle": "Programu ya uthibitishaji"
 }

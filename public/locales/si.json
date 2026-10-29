@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ලබා ගත හැකි දෙවන පියවර",
 	"twoStep.passkeysAvailable": "පාස්කී {count}කට මුරපද පුරනය තහවුරු කළ හැකිය.",
 	"twoStep.noPasskeys": "පාස්කී ලියාපදිංචි කර නැත.",
-	"twoStep.authenticatorOn": "සත්‍යාපන යෙදුම සක්‍රීයයි · ප්‍රතිසාධන කේත {count}ක් ඉතිරියි.",
-	"twoStep.authenticatorOff": "සත්‍යාපන යෙදුම අක්‍රීයයි.",
+	"twoStep.authenticatorOn": "සැකසා ඇත · ප්‍රතිසාධන කේත {count}ක් ඉතිරියි.",
+	"twoStep.authenticatorOff": "සැකසා නැත.",
 	"common.save": "සුරකින්න",
-	"authError.passkeyOnlyPassword": "මෙම ගිණුම පාස්කී පමණක් භාවිත කරයි. ඒ වෙනුවට එයට ප්‍රතිසාධන සබැඳියක් යවන්න."
+	"authError.passkeyOnlyPassword": "මෙම ගිණුම පාස්කී පමණක් භාවිත කරයි. ඒ වෙනුවට එයට ප්‍රතිසාධන සබැඳියක් යවන්න.",
+	"passkey.check": "පාස්කී එකක් පරීක්ෂා කරන්න",
+	"passkey.justVerified": "දැන් සත්‍යාපනය විය",
+	"passkey.cantUse": "ඔබේ පාස්කී භාවිත කළ නොහැකිද?",
+	"twoStep.addMethodHint": "මෙය සක්‍රීය කිරීමට පාස්කී එකක් හෝ සත්‍යාපන යෙදුමක් එක් කරන්න.",
+	"twoStep.passkeyTitle": "පාස්කී",
+	"twoStep.managePasskeys": "පාස්කී කළමනාකරණය කරන්න",
+	"twoStep.authenticatorTitle": "සත්‍යාපන යෙදුම"
 }

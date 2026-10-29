@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
+import { useEffect, useState } from "react";
+import { browserSupportsWebAuthn } from "@simplewebauthn/browser";
+import { CheckCircle2, KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PasskeySummary } from "./passkey-settings-types";
-import { addPasskey, passkeyProvider, removePasskey, renamePasskey } from "./passkey-settings-utils";
+import { addPasskey, checkPasskey, passkeyProvider, removePasskey, renamePasskey } from "./passkey-settings-utils";
 import { refreshSecurityStatus, useSecurityStatus } from "./security-status-store";
 import { StepUpDialog } from "./step-up-dialog";
 import { authErrorText } from "@/lib/auth/error-messages";
+import { isPasskeyCancellation, isPasskeyUnsupported } from "@/lib/auth/webauthn/browser-errors";
 import { ClientRequestError } from "@/lib/http/client-error";
 
 type PendingAction = { type: "add"; name: string } | { type: "remove"; id: string; name: string };
@@ -26,10 +28,42 @@ export function PasskeySettings() {
 	const [rename, setRename] = useState<{ id: string; name: string } | null>(null);
 	const [renameError, setRenameError] = useState<string | null>(null);
 	const [renaming, setRenaming] = useState(false);
+	const [checking, setChecking] = useState(false);
+	const [checkedId, setCheckedId] = useState<string | null>(null);
+	const [checkError, setCheckError] = useState<string | null>(null);
+
+	// Keep the recognition badge long enough to notice, then return the list to
+	// its resting state without another click.
+	useEffect(() => {
+		if (!checkedId) return;
+		const timer = window.setTimeout(() => setCheckedId(null), 10_000);
+		return () => window.clearTimeout(timer);
+	}, [checkedId]);
 
 	function displayName(passkey: PasskeySummary) {
 		if (passkey.name.trim()) return passkey.name;
 		return passkeyProvider(passkey.aaguid) ?? t("passkey.defaultName", { date: new Date(passkey.createdAt).toLocaleDateString() });
+	}
+
+	async function onCheck() {
+		if (!browserSupportsWebAuthn()) {
+			setCheckError(t("passkey.browserUnsupported"));
+			return;
+		}
+		setChecking(true);
+		setCheckError(null);
+		setCheckedId(null);
+		try {
+			const id = await checkPasskey();
+			setCheckedId(id);
+			await refreshSecurityStatus(true);
+		} catch (error) {
+			if (isPasskeyCancellation(error)) return;
+			if (isPasskeyUnsupported(error)) setCheckError(t("passkey.browserUnsupported"));
+			else setCheckError(authErrorText(error instanceof ClientRequestError ? error.code : undefined, t, "passkey.verifyFailed"));
+		} finally {
+			setChecking(false);
+		}
 	}
 
 	async function authorized(token: string) {
@@ -64,37 +98,62 @@ export function PasskeySettings() {
 
 	const otherSignInMethod = status.passwordSet && (!status.requireSecondFactor || status.totpEnabled);
 	const canRemove = status.passkeys.length > 1 || otherSignInMethod;
+	const checkedPasskey = checkedId ? status.passkeys.find((passkey) => passkey.id === checkedId) ?? null : null;
 
 	return (
 		<div className="space-y-5">
-			<div className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-50 p-4">
-				<div className="flex items-start gap-3">
-					{status.passkeys.length > 0 ? (
-						<ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
-					) : (
-						<ShieldOff className="mt-0.5 h-5 w-5 shrink-0 text-neutral-400" />
-					)}
-					<div>
+			<div className="rounded-2xl bg-neutral-50 p-4">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="flex min-w-0 items-start gap-3">
+						{status.passkeys.length > 0 ? (
+							<ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+						) : (
+							<ShieldOff className="mt-0.5 h-5 w-5 shrink-0 text-neutral-400" />
+						)}
 						<p className="text-sm font-medium text-neutral-900">
 							{status.passkeys.length === 0 ? t("passkey.none") : t("passkey.count", { count: status.passkeys.length })}
 						</p>
-						<p className="mt-1 text-sm text-neutral-500">{t("passkey.description")}</p>
+					</div>
+					<div className="flex shrink-0 flex-wrap items-center gap-2">
+						{status.passkeys.length > 0 && (
+							<Button type="button" variant="outline" onClick={() => void onCheck()} disabled={checking}>
+								<CheckCircle2 className="h-4 w-4" />
+								{checking ? t("common.pleaseWait") : t("passkey.check")}
+							</Button>
+						)}
+						<Button type="button" onClick={() => setAddOpen(true)}>
+							<Plus className="h-4 w-4" />
+							{t("passkey.add")}
+						</Button>
 					</div>
 				</div>
-				<Button type="button" variant="outline" onClick={() => setAddOpen(true)}>
-					<Plus className="h-4 w-4" />
-					{t("passkey.add")}
-				</Button>
+				{checkError && <p role="alert" className="mt-3 text-sm text-red-600">{checkError}</p>}
+				{checkedPasskey && (
+					<p role="status" aria-live="polite" className="sr-only">
+						{t("passkey.justVerified")}: {displayName(checkedPasskey)}
+					</p>
+				)}
 			</div>
 
 			{status.passkeys.length > 0 && (
 				<ul className="divide-y divide-neutral-100 rounded-2xl border border-neutral-100">
 					{status.passkeys.map((passkey) => (
-						<li key={passkey.id} className="flex items-center justify-between gap-4 px-4 py-3">
+						<li
+							key={passkey.id}
+							className={`flex items-center justify-between gap-4 px-4 py-3 transition-colors ${checkedId === passkey.id ? "bg-green-50/70" : ""}`}
+						>
 							<div className="flex min-w-0 items-start gap-3">
 								<KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
 								<div className="min-w-0">
-									<p className="truncate text-sm font-medium text-neutral-900" title={displayName(passkey)}>{displayName(passkey)}</p>
+									<div className="flex flex-wrap items-center gap-2">
+										<p className="truncate text-sm font-medium text-neutral-900" title={displayName(passkey)}>{displayName(passkey)}</p>
+										{checkedId === passkey.id && (
+											<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+												<CheckCircle2 className="h-3 w-3" />
+												{t("passkey.justVerified")}
+											</span>
+										)}
+									</div>
 									<p className="mt-1 text-xs text-neutral-500">
 										{passkey.lastUsedAt
 											? t("passkey.lastUsed", { date: new Date(passkey.lastUsedAt).toLocaleString() })
@@ -134,8 +193,6 @@ export function PasskeySettings() {
 					))}
 				</ul>
 			)}
-
-			<p className="rounded-2xl border border-neutral-100 p-4 text-xs leading-5 text-neutral-500">{t("passkey.lostAllHint")}</p>
 
 			<Dialog open={addOpen} onOpenChange={setAddOpen}>
 				<DialogContent className="sm:max-w-[440px]">

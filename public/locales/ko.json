@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "사용 가능한 두 번째 단계",
 	"twoStep.passkeysAvailable": "패스키 {count}개로 비밀번호 로그인을 확인할 수 있습니다.",
 	"twoStep.noPasskeys": "등록된 패스키가 없습니다.",
-	"twoStep.authenticatorOn": "인증 앱 켜짐 · 복구 코드 {count}개 남음",
-	"twoStep.authenticatorOff": "인증 앱 꺼짐",
+	"twoStep.authenticatorOn": "설정됨 · 복구 코드 {count}개 남음",
+	"twoStep.authenticatorOff": "설정되지 않음",
 	"common.save": "저장",
-	"authError.passkeyOnlyPassword": "이 계정은 패스키만 사용합니다. 대신 복구 링크를 보내세요."
+	"authError.passkeyOnlyPassword": "이 계정은 패스키만 사용합니다. 대신 복구 링크를 보내세요.",
+	"passkey.check": "패스키 확인",
+	"passkey.justVerified": "방금 확인됨",
+	"passkey.cantUse": "패스키를 사용할 수 없나요?",
+	"twoStep.addMethodHint": "이 기능을 켜려면 패스키 또는 인증 앱을 추가하세요.",
+	"twoStep.passkeyTitle": "패스키",
+	"twoStep.managePasskeys": "패스키 관리",
+	"twoStep.authenticatorTitle": "인증 앱"
 }

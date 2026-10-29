@@ -138,6 +138,7 @@ export function PasswordSettings() {
 						<DialogTitle>{t("passkey.removePasswordTitle")}</DialogTitle>
 						<DialogDescription>{t("passkey.removePasswordDescription")}</DialogDescription>
 					</DialogHeader>
+					<p className="mb-4 text-sm leading-6 text-neutral-500">{t("passkey.lostAllHint")}</p>
 					<Button
 						variant="destructive"
 						onClick={() => {

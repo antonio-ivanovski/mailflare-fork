@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Verfügbare zweite Schritte",
 	"twoStep.passkeysAvailable": "{count} Passkeys können eine Passwortanmeldung bestätigen.",
 	"twoStep.noPasskeys": "Keine Passkeys eingerichtet.",
-	"twoStep.authenticatorOn": "Authentifizierungs-App ist aktiviert · Noch {count} Wiederherstellungscodes übrig.",
-	"twoStep.authenticatorOff": "Die Authentifizierungs-App ist deaktiviert.",
+	"twoStep.authenticatorOn": "Eingerichtet · Noch {count} Wiederherstellungscodes.",
+	"twoStep.authenticatorOff": "Nicht eingerichtet.",
 	"common.save": "Speichern",
-	"authError.passkeyOnlyPassword": "Dieses Konto verwendet nur Passkeys. Senden Sie ihm stattdessen einen Wiederherstellungslink."
+	"authError.passkeyOnlyPassword": "Dieses Konto verwendet nur Passkeys. Senden Sie ihm stattdessen einen Wiederherstellungslink.",
+	"passkey.check": "Passkey prüfen",
+	"passkey.justVerified": "Gerade bestätigt",
+	"passkey.cantUse": "Passkey nicht verfügbar?",
+	"twoStep.addMethodHint": "Fügen Sie einen Passkey oder eine Authentifizierungs-App hinzu, um dies zu aktivieren.",
+	"twoStep.passkeyTitle": "Passkey",
+	"twoStep.managePasskeys": "Passkeys verwalten",
+	"twoStep.authenticatorTitle": "Authentifizierungs-App"
 }

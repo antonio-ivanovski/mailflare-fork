@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "Beschikbare tweede stappen",
 	"twoStep.passkeysAvailable": "{count} passkeys kunnen een wachtwoordaanmelding bevestigen.",
 	"twoStep.noPasskeys": "Geen passkeys ingesteld.",
-	"twoStep.authenticatorOn": "Authenticatie-app staat aan · Nog {count} herstelcodes.",
-	"twoStep.authenticatorOff": "Authenticatie-app staat uit.",
+	"twoStep.authenticatorOn": "Ingesteld · Nog {count} herstelcodes.",
+	"twoStep.authenticatorOff": "Niet ingesteld.",
 	"common.save": "Opslaan",
-	"authError.passkeyOnlyPassword": "Dit account gebruikt alleen passkeys. Stuur in plaats daarvan een herstellink."
+	"authError.passkeyOnlyPassword": "Dit account gebruikt alleen passkeys. Stuur in plaats daarvan een herstellink.",
+	"passkey.check": "Een passkey controleren",
+	"passkey.justVerified": "Zojuist geverifieerd",
+	"passkey.cantUse": "Kun je je passkey niet gebruiken?",
+	"twoStep.addMethodHint": "Voeg een passkey of authenticatie-app toe om dit in te schakelen.",
+	"twoStep.passkeyTitle": "Passkey",
+	"twoStep.managePasskeys": "Passkeys beheren",
+	"twoStep.authenticatorTitle": "Authenticatie-app"
 }

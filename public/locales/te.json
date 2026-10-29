@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "అందుబాటులో ఉన్న రెండో దశలు",
 	"twoStep.passkeysAvailable": "{count} పాస్‌కీలు పాస్‌వర్డ్ సైన్ ఇన్‌ను నిర్ధారించగలవు.",
 	"twoStep.noPasskeys": "పాస్‌కీలు ఏవీ నమోదు చేయబడలేదు.",
-	"twoStep.authenticatorOn": "ఆథెంటికేటర్ యాప్ ఆన్‌లో ఉంది · {count} రికవరీ కోడ్‌లు మిగిలాయి.",
-	"twoStep.authenticatorOff": "ఆథెంటికేటర్ యాప్ ఆఫ్‌లో ఉంది.",
+	"twoStep.authenticatorOn": "సెటప్ చేయబడింది · {count} రికవరీ కోడ్‌లు మిగిలాయి.",
+	"twoStep.authenticatorOff": "సెటప్ చేయలేదు.",
 	"common.save": "సేవ్ చేయండి",
-	"authError.passkeyOnlyPassword": "ఈ ఖాతా పాస్‌కీలను మాత్రమే ఉపయోగిస్తుంది. బదులుగా దానికి రికవరీ లింక్‌ను పంపండి."
+	"authError.passkeyOnlyPassword": "ఈ ఖాతా పాస్‌కీలను మాత్రమే ఉపయోగిస్తుంది. బదులుగా దానికి రికవరీ లింక్‌ను పంపండి.",
+	"passkey.check": "పాస్‌కీని తనిఖీ చేయండి",
+	"passkey.justVerified": "ఇప్పుడే ధృవీకరించబడింది",
+	"passkey.cantUse": "మీ పాస్‌కీని ఉపయోగించలేకపోతున్నారా?",
+	"twoStep.addMethodHint": "దీన్ని ఆన్ చేయడానికి పాస్‌కీ లేదా ఆథెంటికేటర్ యాప్‌ను జోడించండి.",
+	"twoStep.passkeyTitle": "పాస్‌కీ",
+	"twoStep.managePasskeys": "పాస్‌కీలను నిర్వహించండి",
+	"twoStep.authenticatorTitle": "ఆథెంటికేటర్ యాప్"
 }

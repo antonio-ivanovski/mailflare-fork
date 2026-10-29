@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "উপলব্ধ দ্বিতীয় ধাপ",
 	"twoStep.passkeysAvailable": "{count}টি পাসকি পাসওয়ার্ড দিয়ে সাইন ইন নিশ্চিত করতে পারে।",
 	"twoStep.noPasskeys": "কোনো পাসকি নিবন্ধিত নেই।",
-	"twoStep.authenticatorOn": "অথেনটিকেটর অ্যাপ চালু আছে · {count}টি রিকভারি কোড বাকি।",
-	"twoStep.authenticatorOff": "অথেনটিকেটর অ্যাপ বন্ধ আছে।",
+	"twoStep.authenticatorOn": "সেট আপ করা আছে · {count}টি রিকভারি কোড বাকি।",
+	"twoStep.authenticatorOff": "সেট আপ করা হয়নি।",
 	"common.save": "সংরক্ষণ করুন",
-	"authError.passkeyOnlyPassword": "এই অ্যাকাউন্ট শুধু পাসকি ব্যবহার করে। এর বদলে এটিকে একটি রিকভারি লিংক পাঠান।"
+	"authError.passkeyOnlyPassword": "এই অ্যাকাউন্ট শুধু পাসকি ব্যবহার করে। এর বদলে এটিকে একটি রিকভারি লিংক পাঠান।",
+	"passkey.check": "একটি পাসকি যাচাই করুন",
+	"passkey.justVerified": "এইমাত্র যাচাই হয়েছে",
+	"passkey.cantUse": "আপনার পাসকি ব্যবহার করতে পারছেন না?",
+	"twoStep.addMethodHint": "এটি চালু করতে একটি পাসকি বা অথেনটিকেটর অ্যাপ যোগ করুন।",
+	"twoStep.passkeyTitle": "পাসকি",
+	"twoStep.managePasskeys": "পাসকি পরিচালনা করুন",
+	"twoStep.authenticatorTitle": "অথেনটিকেটর অ্যাপ"
 }

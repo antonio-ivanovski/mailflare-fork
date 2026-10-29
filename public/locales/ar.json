@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "خطوات التحقق الثانية المتاحة",
 	"twoStep.passkeysAvailable": "يمكن لـ {count} من مفاتيح المرور تأكيد تسجيل الدخول بكلمة المرور.",
 	"twoStep.noPasskeys": "لم يتم تسجيل أي مفاتيح مرور.",
-	"twoStep.authenticatorOn": "تطبيق المصادقة مفعّل · رموز الاسترداد المتبقية: {count}.",
-	"twoStep.authenticatorOff": "تطبيق المصادقة معطّل.",
+	"twoStep.authenticatorOn": "مُعدّ · رموز الاسترداد المتبقية: {count}.",
+	"twoStep.authenticatorOff": "غير مُعدّ.",
 	"common.save": "حفظ",
-	"authError.passkeyOnlyPassword": "يستخدم هذا الحساب مفاتيح المرور فقط. أرسل له رابط استرداد بدلًا من ذلك."
+	"authError.passkeyOnlyPassword": "يستخدم هذا الحساب مفاتيح المرور فقط. أرسل له رابط استرداد بدلًا من ذلك.",
+	"passkey.check": "التحقق من مفتاح مرور",
+	"passkey.justVerified": "تم التحقق للتو",
+	"passkey.cantUse": "ألا تستطيع استخدام مفتاح المرور؟",
+	"twoStep.addMethodHint": "أضف مفتاح مرور أو تطبيق مصادقة لتفعيل هذا.",
+	"twoStep.passkeyTitle": "مفتاح مرور",
+	"twoStep.managePasskeys": "إدارة مفاتيح المرور",
+	"twoStep.authenticatorTitle": "تطبيق المصادقة"
 }

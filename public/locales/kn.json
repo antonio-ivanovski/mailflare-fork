@@ -2302,8 +2302,15 @@
 	"twoStep.methodsTitle": "ಲಭ್ಯವಿರುವ ಎರಡನೇ ಹಂತಗಳು",
 	"twoStep.passkeysAvailable": "{count} ಪಾಸ್‌ಕಿಗಳು ಪಾಸ್‌ವರ್ಡ್ ಸೈನ್ ಇನ್ ದೃಢೀಕರಿಸಬಹುದು.",
 	"twoStep.noPasskeys": "ಯಾವುದೇ ಪಾಸ್‌ಕಿಗಳನ್ನು ನೋಂದಿಸಿಲ್ಲ.",
-	"twoStep.authenticatorOn": "ದೃಢೀಕರಣ ಆ್ಯಪ್ ಆನ್ ಆಗಿದೆ · {count} ಮರುಪಡೆಯುವಿಕೆ ಕೋಡ್‌ಗಳು ಉಳಿದಿವೆ.",
-	"twoStep.authenticatorOff": "ದೃಢೀಕರಣ ಆ್ಯಪ್ ಆಫ್ ಆಗಿದೆ.",
+	"twoStep.authenticatorOn": "ಸೆಟಪ್ ಆಗಿದೆ · {count} ಮರುಪಡೆಯುವಿಕೆ ಕೋಡ್‌ಗಳು ಉಳಿದಿವೆ.",
+	"twoStep.authenticatorOff": "ಸೆಟಪ್ ಮಾಡಿಲ್ಲ.",
 	"common.save": "ಉಳಿಸಿ",
-	"authError.passkeyOnlyPassword": "ಈ ಖಾತೆ ಪಾಸ್‌ಕಿಗಳನ್ನು ಮಾತ್ರ ಬಳಸುತ್ತದೆ. ಬದಲಾಗಿ ಅದಕ್ಕೆ ಮರುಪಡೆಯುವಿಕೆ ಲಿಂಕ್ ಕಳುಹಿಸಿ."
+	"authError.passkeyOnlyPassword": "ಈ ಖಾತೆ ಪಾಸ್‌ಕಿಗಳನ್ನು ಮಾತ್ರ ಬಳಸುತ್ತದೆ. ಬದಲಾಗಿ ಅದಕ್ಕೆ ಮರುಪಡೆಯುವಿಕೆ ಲಿಂಕ್ ಕಳುಹಿಸಿ.",
+	"passkey.check": "ಪಾಸ್‌ಕಿ ಪರಿಶೀಲಿಸಿ",
+	"passkey.justVerified": "ಈಗ ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+	"passkey.cantUse": "ನಿಮ್ಮ ಪಾಸ್‌ಕಿ ಬಳಸಲು ಸಾಧ್ಯವಿಲ್ಲವೇ?",
+	"twoStep.addMethodHint": "ಇದನ್ನು ಆನ್ ಮಾಡಲು ಪಾಸ್‌ಕಿ ಅಥವಾ ದೃಢೀಕರಣ ಆ್ಯಪ್ ಸೇರಿಸಿ.",
+	"twoStep.passkeyTitle": "ಪಾಸ್‌ಕಿ",
+	"twoStep.managePasskeys": "ಪಾಸ್‌ಕಿಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
+	"twoStep.authenticatorTitle": "ದೃಢೀಕರಣ ಆ್ಯಪ್"
 }
