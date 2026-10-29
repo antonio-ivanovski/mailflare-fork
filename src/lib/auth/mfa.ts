@@ -50,8 +50,9 @@ export async function confirmMfaEnrollment(
 }
 
 /**
- * Turning TOTP off keeps the second-factor requirement only when a passkey
- * remains as the alternative. Recovery codes alone are a fallback, not a
+ * Turning TOTP off leaves the second-factor requirement as the account had it:
+ * a passkey can take over, but an account that never asked for a second step
+ * does not start requiring one. Recovery codes alone are a fallback, not a
  * primary factor, so they do not keep the requirement on.
  */
 export async function disableMfa(env: CloudflareEnv, userId: string): Promise<void> {
@@ -64,7 +65,7 @@ export async function disableMfa(env: CloudflareEnv, userId: string): Promise<vo
 			totpSecret: null,
 			totpEnabled: false,
 			totpConfirmedAt: null,
-			requireSecondFactor: sql`case when ${users.passkeyCount} > 0 then true else false end`,
+			requireSecondFactor: sql`case when ${users.passkeyCount} > 0 then ${users.requireSecondFactor} else false end`,
 		})
 		.where(eq(users.id, userId));
 	await db.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));

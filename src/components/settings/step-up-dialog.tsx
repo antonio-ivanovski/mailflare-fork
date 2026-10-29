@@ -24,6 +24,8 @@ export function StepUpDialog({
 	requireSecondFactor = false,
 	totpEnabled = false,
 	action,
+	title,
+	description,
 	targetUserId,
 	onOpenChange,
 	onAuthorized,
@@ -34,9 +36,12 @@ export function StepUpDialog({
 	requireSecondFactor?: boolean;
 	totpEnabled?: boolean;
 	action: string;
+	title?: string;
+	description?: string;
 	targetUserId?: string;
 	onOpenChange: (open: boolean) => void;
-	onAuthorized: (stepUpToken: string) => void | Promise<void>;
+	/** Return true to keep the dialog open for the next step of the same flow. */
+	onAuthorized: (stepUpToken: string) => void | boolean | Promise<void | boolean>;
 }) {
 	const { t } = useLanguage();
 	const [password, setPassword] = useState("");
@@ -60,28 +65,26 @@ export function StepUpDialog({
 		}
 	}
 
-	async function submitPassword(event: React.FormEvent) {
-		event.preventDefault();
+	async function authorize(getToken: () => Promise<string>) {
 		setBusy(true);
 		setError(null);
 		try {
-			await onAuthorized(await stepUpWithPassword(password, needsCode ? code : undefined, action, targetUserId));
+			const token = await getToken();
+			const keepOpen = await onAuthorized(token);
+			if (keepOpen === true) {
+				// The next step of the same flow asks for its own proof.
+				setPassword("");
+				setCode("");
+				setShowPassword(false);
+				return;
+			}
 			close(false);
 		} catch (err) {
-			setError(authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.verifyFailed"));
-		} finally {
-			setBusy(false);
-		}
-	}
-
-	async function submitPasskey() {
-		setBusy(true);
-		setError(null);
-		try {
-			await onAuthorized(await stepUpWithPasskey(action, targetUserId));
-			close(false);
-		} catch (err) {
-			setError(isPasskeyCancellation(err) ? t("authError.passkeyCancelled") : authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.verifyFailed"));
+			setError(
+				isPasskeyCancellation(err)
+					? t("authError.passkeyCancelled")
+					: authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.verifyFailed"),
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -91,12 +94,12 @@ export function StepUpDialog({
 		<Dialog open={open} onOpenChange={close}>
 			<DialogContent className="sm:max-w-[440px]">
 				<DialogHeader>
-					<DialogTitle>{t("passkey.verifyTitle")}</DialogTitle>
-					<DialogDescription>{t("passkey.verifyDescription")}</DialogDescription>
+					<DialogTitle>{title ?? t("passkey.verifyTitle")}</DialogTitle>
+					<DialogDescription>{description ?? t("passkey.verifyDescription")}</DialogDescription>
 				</DialogHeader>
 				{canUsePasskey && (
 					<div className="space-y-3">
-						<Button type="button" className="w-full" onClick={() => void submitPasskey()} disabled={busy}>
+						<Button type="button" className="w-full" onClick={() => void authorize(() => stepUpWithPasskey(action, targetUserId))} disabled={busy}>
 							<KeyRound className="h-4 w-4" />
 							{busy ? t("passkey.waiting") : t("passkey.verifyWithPasskey")}
 						</Button>
@@ -110,7 +113,13 @@ export function StepUpDialog({
 					</div>
 				)}
 				{showPasswordForm && passwordPathAllowed && (
-					<form onSubmit={submitPassword} className="space-y-4">
+					<form
+						onSubmit={(event) => {
+							event.preventDefault();
+							void authorize(() => stepUpWithPassword(password, needsCode ? code : undefined, action, targetUserId));
+						}}
+						className="space-y-4"
+					>
 						<div className="space-y-2">
 							<Label htmlFor="step-up-password">{t("common.password")}</Label>
 							<Input

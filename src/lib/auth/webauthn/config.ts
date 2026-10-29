@@ -1,4 +1,5 @@
 import { getBranding } from "@/lib/branding/service";
+import { WebAuthnOriginError } from "./errors";
 
 export type WebAuthnConfig = {
 	origin: string;
@@ -20,7 +21,7 @@ export async function getWebAuthnConfig(env: CloudflareEnv, request: Request): P
 	const configured = env.APP_URL?.trim();
 	const url = new URL(configured || request.url);
 	if (url.protocol !== "https:" && !isLocalhost(url.hostname)) {
-		throw new Error("Passkeys need a trusted HTTPS origin. Set APP_URL to this install's public URL.");
+		throw new WebAuthnOriginError();
 	}
 	const { appName } = await getBranding(env);
 	return { origin: url.origin, rpID: url.hostname, rpName: appName };

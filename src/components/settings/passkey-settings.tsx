@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser";
 import { CheckCircle2, KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
@@ -9,14 +9,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PasskeySummary } from "./passkey-settings-types";
-import { addPasskey, checkPasskey, passkeyProvider, removePasskey, renamePasskey } from "./passkey-settings-utils";
+import { addPasskey, checkPasskey, passkeyProvider, removePasskey, renamePasskey, removePassword, setSecondFactorRequirement } from "./passkey-settings-utils";
+import { PasskeyFirstChoice, type PasskeyPolicyChoice } from "./passkey-first-choice";
+import { disableMfa } from "./utils";
 import { refreshSecurityStatus, useSecurityStatus } from "./security-status-store";
 import { StepUpDialog } from "./step-up-dialog";
 import { authErrorText } from "@/lib/auth/error-messages";
 import { isPasskeyCancellation, isPasskeyUnsupported } from "@/lib/auth/webauthn/browser-errors";
 import { ClientRequestError } from "@/lib/http/client-error";
 
-type PendingAction = { type: "add"; name: string } | { type: "remove"; id: string; name: string };
+/** The security changes the first-passkey choice can ask for, in order. */
+type PolicyStep = "mfa.disable" | "password.remove" | "second_factor.toggle";
+
+type PendingAction =
+	| { type: "add"; name: string; first: boolean; hadPassword: boolean }
+	| { type: "remove"; id: string; name: string }
+	| { type: "policy"; step: PolicyStep };
 
 export function PasskeySettings() {
 	const { t } = useLanguage();
@@ -31,6 +39,9 @@ export function PasskeySettings() {
 	const [checking, setChecking] = useState(false);
 	const [checkedId, setCheckedId] = useState<string | null>(null);
 	const [checkError, setCheckError] = useState<string | null>(null);
+	const [choiceOpen, setChoiceOpen] = useState(false);
+	/** Set when the step that just finished enrolled the first passkey. */
+	const choiceAfterAdd = useRef(false);
 
 	// Keep the recognition badge long enough to notice, then return the list to
 	// its resting state without another click.
@@ -66,16 +77,52 @@ export function PasskeySettings() {
 		}
 	}
 
-	async function authorized(token: string) {
-		if (!pending) return;
-		if (pending.type === "add") {
-			await addPasskey(pending.name, token);
-			setName("");
-		} else {
-			await removePasskey(pending.id, token);
+	/**
+	 * Runs the confirmed change. Returning true keeps the step-up dialog open
+	 * for the next step of the same flow.
+	 */
+	async function authorized(token: string): Promise<boolean> {
+		if (!pending) return false;
+		try {
+			if (pending.type === "add") {
+				await addPasskey(pending.name, token);
+				setName("");
+				await refreshSecurityStatus(true);
+				choiceAfterAdd.current = pending.first && pending.hadPassword;
+			} else if (pending.type === "remove") {
+				await removePasskey(pending.id, token);
+				await refreshSecurityStatus(true);
+			} else if (pending.step === "mfa.disable") {
+				await disableMfa({ stepUpToken: token });
+				await refreshSecurityStatus(true);
+				setPending({ type: "policy", step: "password.remove" });
+				return true;
+			} else if (pending.step === "password.remove") {
+				await removePassword(token);
+				await refreshSecurityStatus(true);
+			} else {
+				await setSecondFactorRequirement(true, token);
+				await refreshSecurityStatus(true);
+			}
+		} catch (error) {
+			// The server may have applied part of the change; re-read the state
+			// before the dialog offers another attempt.
+			await refreshSecurityStatus(true);
+			throw error;
 		}
-		await refreshSecurityStatus(true);
-		setPending(null);
+		return false;
+	}
+
+	function choose(choice: PasskeyPolicyChoice) {
+		setChoiceOpen(false);
+		if (choice === "keep") return;
+		if (choice === "password-and-passkey") {
+			setPending({ type: "policy", step: "second_factor.toggle" });
+			return;
+		}
+		// The authenticator goes first so the password removal leaves no
+		// second-factor requirement behind.
+		setPending({ type: "policy", step: status?.totpEnabled ? "mfa.disable" : "password.remove" });
 	}
 
 	async function submitRename(event: React.FormEvent) {
@@ -99,6 +146,28 @@ export function PasskeySettings() {
 	const otherSignInMethod = status.passwordSet && (!status.requireSecondFactor || status.totpEnabled);
 	const canRemove = status.passkeys.length > 1 || otherSignInMethod;
 	const checkedPasskey = checkedId ? status.passkeys.find((passkey) => passkey.id === checkedId) ?? null : null;
+
+	const stepUpAction = pending
+		? pending.type === "add"
+			? "passkey.add"
+			: pending.type === "remove"
+				? "passkey.remove"
+				: pending.step
+		: "";
+	const stepUpTitle = pending?.type === "policy"
+		? pending.step === "mfa.disable"
+			? t("mfa.turnOffTitle")
+			: pending.step === "password.remove"
+				? t("passkey.removePasswordTitle")
+				: t("twoStep.requireTitle")
+		: undefined;
+	const stepUpDescription = pending?.type === "policy"
+		? pending.step === "mfa.disable"
+			? t("mfa.turnOffDescription")
+			: pending.step === "password.remove"
+				? t("passkey.removePasswordDescription")
+				: t("twoStep.requireDescription")
+		: undefined;
 
 	return (
 		<div className="space-y-5">
@@ -201,7 +270,12 @@ export function PasskeySettings() {
 						onSubmit={(event) => {
 							event.preventDefault();
 							setAddOpen(false);
-							setPending({ type: "add", name: name.trim() });
+							setPending({
+								type: "add",
+								name: name.trim(),
+								first: status.passkeys.length === 0,
+								hadPassword: status.passwordSet,
+							});
 						}}
 					>
 						<DialogHeader>
@@ -270,14 +344,29 @@ export function PasskeySettings() {
 				</DialogContent>
 			</Dialog>
 
+			<PasskeyFirstChoice
+				open={choiceOpen}
+				totpEnabled={status.totpEnabled}
+				onOpenChange={setChoiceOpen}
+				onChoose={choose}
+			/>
+
 			<StepUpDialog
 				open={!!pending}
 				hasPassword={status.passwordSet}
 				hasPasskey={status.passkeys.length > 0}
 				requireSecondFactor={status.requireSecondFactor}
 				totpEnabled={status.totpEnabled}
-				action={pending?.type === "add" ? "passkey.add" : "passkey.remove"}
-				onOpenChange={(open) => !open && setPending(null)}
+				action={stepUpAction}
+				title={stepUpTitle}
+				description={stepUpDescription}
+				onOpenChange={(open) => {
+					if (open) return;
+					setPending(null);
+					if (!choiceAfterAdd.current) return;
+					choiceAfterAdd.current = false;
+					setChoiceOpen(true);
+				}}
 				onAuthorized={authorized}
 			/>
 		</div>

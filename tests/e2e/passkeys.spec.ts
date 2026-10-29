@@ -1,8 +1,11 @@
+import { createHmac } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 const EMAIL = "admin@example.com";
 const PASSWORD = "demo-password-change-me";
 let authenticatorId = "";
+/** The authenticator secret of the running enrollment, used to sign a code. */
+let totpSecret = "";
 
 async function enableVirtualAuthenticator(page: Page): Promise<string> {
 	const client = await page.context().newCDPSession(page);
@@ -48,39 +51,109 @@ test.afterEach(async ({ request }) => {
 	await request.post("/api/seed?reset=1");
 });
 
-async function completeStepUp(page: Page) {
-	const dialog = page.getByRole("dialog");
-	await expect(dialog.getByText("Confirm it is you")).toBeVisible();
+/**
+ * Sign-in attempts are limited to twenty a minute. The client address is a
+ * plain header locally, so every test gets its own budget.
+ */
+async function isolateRateLimit(page: Page, address: string) {
+	await page.context().setExtraHTTPHeaders({ "cf-connecting-ip": address });
+}
+
+const BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+function base32Decode(input: string): Buffer {
+	const clean = input.toUpperCase().replace(/[^A-Z2-7]/g, "");
+	const bytes: number[] = [];
+	let bits = 0;
+	let value = 0;
+	for (const char of clean) {
+		value = (value << 5) | BASE32.indexOf(char);
+		bits += 5;
+		if (bits >= 8) {
+			bytes.push((value >>> (bits - 8)) & 255);
+			bits -= 8;
+		}
+	}
+	return Buffer.from(bytes);
+}
+
+/** RFC 6238, the same profile the app's authenticator flow expects. */
+function totpCode(secret: string): string {
+	const counter = Math.floor(Date.now() / 1000 / 30);
+	const message = Buffer.alloc(8);
+	message.writeBigUInt64BE(BigInt(counter));
+	const digest = createHmac("sha1", base32Decode(secret)).update(message).digest();
+	const offset = digest[digest.length - 1] & 15;
+	const code = ((digest[offset] & 127) << 24) | ((digest[offset + 1] & 255) << 16) | ((digest[offset + 2] & 255) << 8) | (digest[offset + 3] & 255);
+	return String(code % 1_000_000).padStart(6, "0");
+}
+
+/**
+ * Confirms the open step-up dialog. A flow with more than one step keeps the
+ * dialog open, so the caller names the title it expects next.
+ */
+async function completeStepUp(page: Page, options: { title?: string; next?: string } = {}) {
+	const title = options.title ?? "Confirm it is you";
+	const dialog = page.getByRole("dialog", { name: title });
+	await expect(dialog).toBeVisible();
 	const passkey = dialog.getByRole("button", { name: "Confirm with a passkey" });
 	if (await passkey.count()) {
 		await setPresence(page, false);
 		await passkey.click();
 		await setPresence(page, true);
-		await expect(dialog).toBeHidden({ timeout: 30_000 });
-		await setPresence(page, false);
-		return;
+	} else {
+		await dialog.getByLabel("Password").fill(PASSWORD);
+		const code = dialog.getByLabel("Code", { exact: true });
+		if (await code.count()) await code.fill(totpCode(totpSecret));
+		await dialog.getByRole("button", { name: "Continue" }).click();
 	}
-	await dialog.getByLabel("Password").fill(PASSWORD);
-	await dialog.getByRole("button", { name: "Continue" }).click();
+	if (options.next) await expect(page.getByRole("dialog", { name: options.next })).toBeVisible({ timeout: 30_000 });
+	else await expect(dialog).toBeHidden({ timeout: 30_000 });
+	await setPresence(page, false);
+}
+
+/** Adds the first passkey and answers the follow-up question. */
+async function addFirstPasskey(page: Page, choice: string) {
+	await page.getByRole("button", { name: "Add a passkey" }).click();
+	await page.getByLabel("Passkey name (optional)").fill("Playwright passkey");
+	await setPresence(page, true);
+	await page.getByRole("dialog").getByRole("button", { name: "Continue" }).click();
+	await completeStepUp(page);
+	await expect(page.getByText("Playwright passkey")).toBeVisible({ timeout: 30_000 });
+	await setPresence(page, false);
+	const dialog = page.getByRole("dialog", { name: "How would you like to sign in?" });
+	await expect(dialog).toBeVisible({ timeout: 30_000 });
+	await dialog.getByRole("button", { name: choice }).click();
+}
+
+/** Enrols an authenticator app so the account has codes to protect. */
+async function enrollAuthenticator(page: Page) {
+	await page.getByRole("button", { name: "Add authenticator app" }).click();
+	await completeStepUp(page);
+	const dialog = page.getByRole("dialog", { name: "Scan the code" });
+	await expect(dialog).toBeVisible({ timeout: 30_000 });
+	totpSecret = ((await dialog.locator("code").first().textContent()) ?? "").trim();
+	await dialog.getByLabel("6-digit code").fill(totpCode(totpSecret));
+	await dialog.getByRole("button", { name: "Verify and turn on" }).click();
+	const codes = page.getByRole("dialog", { name: "Save your recovery codes" });
+	await expect(codes).toBeVisible({ timeout: 30_000 });
+	await codes.getByRole("button", { name: "Done" }).click();
+	await expect(codes).toBeHidden({ timeout: 30_000 });
 }
 
 test("passkey lifecycle: add, rename, sign in, second step, password removal", async ({ page, request }) => {
 	test.setTimeout(180_000);
 	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.11");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
 
 	await loginWithPassword(page);
 	await page.goto("/settings/security");
 
-	// Add a passkey, re-authenticating with the password first.
-	await page.getByRole("button", { name: "Add a passkey" }).click();
-	await page.getByLabel("Passkey name (optional)").fill("Playwright passkey");
-	await setPresence(page, true);
-	await page.getByRole("button", { name: "Continue" }).click();
-	await completeStepUp(page);
-	await expect(page.getByText("Playwright passkey")).toBeVisible({ timeout: 30_000 });
-	await setPresence(page, false);
+	// The first passkey asks what should happen to password sign-in.
+	await addFirstPasskey(page, "Keep my password without a second step");
+	await expect(page.getByRole("dialog", { name: "How would you like to sign in?" })).toBeHidden();
 
 	// A check identifies the saved credential without signing in again.
 	await page.getByRole("button", { name: "Check a passkey" }).click();
@@ -145,6 +218,95 @@ test("passkey lifecycle: add, rename, sign in, second step, password removal", a
 	await expect(page.getByRole("button", { name: "Remove Renamed passkey" })).toBeDisabled();
 
 	// Password sign-in no longer works; the passkey still does.
+	await logout(page);
+	await page.getByLabel("Email").fill(EMAIL);
+	await page.getByLabel("Password").fill(PASSWORD);
+	await page.getByRole("button", { name: "Sign in", exact: true }).click();
+	await expect(page.getByText("Invalid email or password.")).toBeVisible({ timeout: 30_000 });
+	await setPresence(page, false);
+	await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+	await setPresence(page, true);
+	await page.waitForURL("**/inbox", { timeout: 30_000 });
+	await setPresence(page, false);
+});
+
+test("first passkey can make the account passkey-only", async ({ page, request }) => {
+	test.setTimeout(180_000);
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.12");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await addFirstPasskey(page, "Use only passkeys");
+
+	// The password goes away, confirmed with the new passkey.
+	await completeStepUp(page, { title: "Remove your password?" });
+	await expect(page.getByText("This account signs in with passkeys only.")).toBeVisible({ timeout: 30_000 });
+
+	// Password sign-in no longer works; the passkey still does.
+	await logout(page);
+	await page.getByLabel("Email").fill(EMAIL);
+	await page.getByLabel("Password").fill(PASSWORD);
+	await page.getByRole("button", { name: "Sign in", exact: true }).click();
+	await expect(page.getByText("Invalid email or password.")).toBeVisible({ timeout: 30_000 });
+	await setPresence(page, false);
+	await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+	await setPresence(page, true);
+	await page.waitForURL("**/inbox", { timeout: 30_000 });
+	await setPresence(page, false);
+});
+
+test("turning the authenticator off keeps the two-step policy as it was", async ({ page, request }) => {
+	test.setTimeout(180_000);
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.14");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await enrollAuthenticator(page);
+	// A passkey is what could take over as the second step.
+	await addFirstPasskey(page, "Keep my current sign-in");
+
+	// The user turns the second step off but keeps the authenticator enrolled.
+	const toggle = page.getByRole("switch", { name: "Require a second step after password sign-in" });
+	await expect(toggle).toHaveAttribute("aria-checked", "true");
+	await toggle.click();
+	await completeStepUp(page);
+	await expect(toggle).toHaveAttribute("aria-checked", "false");
+
+	// Removing the authenticator must not switch the second step back on.
+	await page.getByRole("button", { name: "Turn off" }).click();
+	await completeStepUp(page);
+	await expect(toggle).toHaveAttribute("aria-checked", "false");
+});
+
+test("first passkey removes the password and the authenticator codes together", async ({ page, request }) => {
+	test.setTimeout(180_000);
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.13");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await enrollAuthenticator(page);
+
+	await addFirstPasskey(page, "Use only passkeys");
+	// With codes in place the choice drops the password-plus-passkey option.
+	await expect(page.getByRole("dialog", { name: "How would you like to sign in?" })).toBeHidden();
+
+	// The authenticator goes first, then the password.
+	await completeStepUp(page, { title: "Turn off authenticator codes", next: "Remove your password?" });
+	await completeStepUp(page, { title: "Remove your password?" });
+	await expect(page.getByText("This account signs in with passkeys only.")).toBeVisible({ timeout: 30_000 });
+
+	// The authenticator app is gone too.
+	await expect(page.getByRole("heading", { name: "Authenticator app" })).toHaveCount(0);
+
 	await logout(page);
 	await page.getByLabel("Email").fill(EMAIL);
 	await page.getByLabel("Password").fill(PASSWORD);

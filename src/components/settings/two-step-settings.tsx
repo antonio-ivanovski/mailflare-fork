@@ -114,27 +114,26 @@ export function TwoStepSettings() {
 
 	return (
 		<div className="space-y-5">
-			<div className="flex items-start justify-between gap-4">
-				<div className="min-w-0">
+			<div>
+				<div className="flex items-center justify-between gap-4">
 					<h2 className="text-lg font-semibold text-neutral-900">{t("twoStep.title")}</h2>
-					<p className="mt-1 text-sm text-neutral-500">{status.passwordSet ? t("twoStep.description") : t("twoStep.passwordlessDescription")}</p>
+					{status.passwordSet && (
+						<Switch
+							checked={status.requireSecondFactor}
+							disabled={busy || (!hasAnyFactor && !status.requireSecondFactor)}
+							onCheckedChange={(enabled) => setPending(enabled ? "toggle-on" : "toggle-off")}
+							aria-label={t("twoStep.requireTitle")}
+						/>
+					)}
 				</div>
-				{status.passwordSet && (
-					<Switch
-						checked={status.requireSecondFactor}
-						disabled={busy || (!hasAnyFactor && !status.requireSecondFactor)}
-						onCheckedChange={(enabled) => setPending(enabled ? "toggle-on" : "toggle-off")}
-						aria-label={t("twoStep.requireTitle")}
-					/>
-				)}
+				<p className="mt-1 text-sm text-neutral-500">{status.passwordSet ? t("twoStep.description") : t("twoStep.passwordlessDescription")}</p>
 			</div>
 
 			{status.passwordSet && !hasAnyFactor && (
 				<p className="text-xs leading-5 text-neutral-500">{t("twoStep.addMethodHint")}</p>
 			)}
 
-			{/* A passwordless account has no password sign-in to protect with a code.
-			    Keep an already-enabled authenticator visible so it can be turned off. */}
+			{/* An enabled authenticator stays visible on a passwordless account so it can be turned off. */}
 			{(status.passwordSet || status.totpEnabled) && (
 				<div className="divide-y divide-neutral-100 rounded-2xl border border-neutral-100">
 					{status.passwordSet && (
@@ -182,17 +181,7 @@ export function TwoStepSettings() {
 			{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
 			<StepUpDialog
-				open={!!pending && pending !== "enroll" && pending !== "disable" && pending !== "codes"}
-				hasPassword={status.passwordSet}
-				hasPasskey={status.passkeys.length > 0}
-				requireSecondFactor={status.requireSecondFactor}
-				totpEnabled={status.totpEnabled}
-				action={actionForPending}
-				onOpenChange={(open) => !open && setPending(null)}
-				onAuthorized={authorized}
-			/>
-			<StepUpDialog
-				open={pending === "enroll" || pending === "disable" || pending === "codes"}
+				open={!!pending}
 				hasPassword={status.passwordSet}
 				hasPasskey={status.passkeys.length > 0}
 				requireSecondFactor={status.requireSecondFactor}

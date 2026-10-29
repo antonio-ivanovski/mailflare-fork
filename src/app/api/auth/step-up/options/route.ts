@@ -12,6 +12,7 @@ import {
 	readCeremonyBindings,
 	setCeremonyCookie,
 } from "@/lib/auth/webauthn/challenges";
+import { webAuthnUnavailableCode } from "@/lib/auth/webauthn/errors";
 import { authError } from "@/lib/http/auth-error";
 
 /** Starts a passkey re-authentication for one named security action. */
@@ -37,7 +38,6 @@ export async function POST(request: Request) {
 		setCeremonyCookie(response.headers, binding, readCeremonyBindings(request));
 		return response;
 	} catch (error) {
-		const origin = error instanceof Error && /HTTPS|APP_URL/i.test(error.message);
-		return authError(origin ? "passkey_origin" : "passkey_unavailable", 503);
+		return authError(webAuthnUnavailableCode(error), 503);
 	}
 }

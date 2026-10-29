@@ -214,6 +214,8 @@ Passkeys satisfy the second step by themselves. Authentication recovery codes be
 
 Sensitive changes (`passkey.add`, `passkey.remove`, `password.set`, `password.remove`, `mfa.enroll`, `mfa.disable`, `mfa.codes`, `second_factor.toggle`, and the administrator actions) require a short-lived step-up grant from `POST /api/auth/step-up` (password plus code where required) or `/api/auth/step-up/options` + `/api/auth/step-up/verify` (passkey). Grants are single-use, bound to the session, action and target account, and become invalid when the account's security configuration changes.
 
+Turning the authenticator app off (`POST /api/settings/mfa/disable`) leaves the second-step requirement as the account had it: a passkey can take over as the second step, but an account that never required one does not start requiring it. Removing the password (`DELETE /api/settings/password`) and removing the authenticator app are separate changes, so a client that moves an account to passkey-only confirms each one on its own.
+
 ## Searching
 
 `GET /api/messages?q=...` (session) and `GET /api/v1/messages?q=...` (API key, `read` scope) accept the same query grammar, backed by an FTS5 index over subject, sender, recipients and body:
