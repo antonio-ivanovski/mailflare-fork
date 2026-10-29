@@ -16,5 +16,6 @@ export type MessageDetailsMessage = Pick<
 
 export type MessageDetailsPanelProps = {
 	message: MessageDetailsMessage;
+	onClose?: () => void;
 	className?: string;
 };

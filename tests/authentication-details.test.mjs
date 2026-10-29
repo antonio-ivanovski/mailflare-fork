@@ -12,7 +12,10 @@ after(() => rmSync(outDir, { recursive: true, force: true }));
 
 await build({
 	stdin: {
-		contents: `export { readSesAuthentication, readSesTrace } from "./src/lib/email/provider-trace";`,
+		contents: [
+			`export { readSesAuthentication, readSesTrace } from "./src/lib/email/provider-trace";`,
+			`export { getSenderWarning } from "./src/components/messages/message-details-utils";`,
+		].join("\n"),
 		resolveDir: root,
 		loader: "ts",
 	},
@@ -137,4 +140,24 @@ From: no-reply@example.com
 Body`));
 	assert.deepEqual(trace.verdicts, { spf: "PASS", dkim: "PASS", dmarc: "PASS", spam: "PASS", virus: "PASS" });
 	assert.equal(trace.senderIp, "203.0.113.5");
+});
+
+test("DMARC-passing mail across sibling subdomains does not raise a sender warning", () => {
+	const authentication = provider.readSesAuthentication(raw(`Authentication-Results: amazonses.com; spf=pass smtp.mailfrom=bounce.mail.example.com; dkim=pass header.d=mail.example.com; dmarc=pass header.from=news.example.com;
+X-SES-Receipt: abc
+From: News <news@news.example.com>
+
+Body`), "news@news.example.com");
+
+	assert.ok(authentication);
+	assert.equal(authentication.dmarc.status, "PASS");
+	// The conservative signature matcher sees siblings as unrelated; DMARC proves alignment.
+	assert.equal(authentication.aligned, false);
+	assert.equal(
+		provider.getSenderWarning(
+			{ direction: "inbound", fromAddr: "News <news@news.example.com>", replyTo: null },
+			{ available: true, ...authentication },
+		),
+		null,
+	);
 });

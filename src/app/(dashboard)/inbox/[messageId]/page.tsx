@@ -23,6 +23,7 @@ import { formatScheduledSendTime } from "@/components/messages/scheduled-send-ut
 import { QuotedEmailToggle } from "@/components/messages/quoted-email-toggle";
 import { ThreadMessageActions } from "@/components/messages/thread-message-actions";
 import { MessageDetailsPanel } from "@/components/messages/message-details-panel";
+import { SenderCheckNotice } from "@/components/messages/sender-check-notice";
 import { useMessageThread } from "@/components/messages/use-message-thread";
 import { useLatestMessagesFirst } from "@/components/messages/use-latest-messages-first";
 import { useMessageListVisibility } from "@/components/messages/message-list-visibility";
@@ -265,9 +266,6 @@ export default function MessageDetailPage() {
                 </p>
                 <div className="sm:hidden flex items-center gap-2 text-xs text-neutral-500">
                   <span>{messageDate(false)}</span>
-                  <button type="button" className="text-blue-600 hover:underline" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((open) => !open)}>
-                    {t("message.details")}
-                  </button>
                 </div>
                 {ccEntries.length > 0 && (
                   <p className="text-xs text-neutral-500">
@@ -283,24 +281,30 @@ export default function MessageDetailPage() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <p className="hidden text-xs sm:block">{messageDate(true)}</p>
-              <button
-                type="button"
-                className="hidden text-xs text-blue-600 hover:underline sm:inline"
-                aria-expanded={detailsOpen}
-                onClick={() => setDetailsOpen((open) => !open)}
-              >
-                {t("message.details")}
-              </button>
               <ThreadMessageActions
                 message={currentThreadMessage}
                 mailboxId={message.mailboxId}
                 ownAddress={ownAddress}
                 ownAddresses={ownAddresses}
                 starOnly={!thread.messages.some((threadMessage) => threadMessage.id === message.id) || !thread.messages.some((threadMessage) => threadMessage.id !== message.id)}
+                detailsOpen={detailsOpen}
+                onToggleDetails={() => setDetailsOpen((open) => !open)}
               />
             </div>
-            {detailsOpen && <MessageDetailsPanel message={message} className="w-full" />}
           </div>
+          <div className="mb-4 px-4 sm:px-0 sm:pl-4 sm:pr-4">
+            <SenderCheckNotice
+              message={message}
+              detailsOpen={detailsOpen}
+              onViewDetails={() => setDetailsOpen(true)}
+              announce
+            />
+          </div>
+          {detailsOpen && (
+            <div className="mb-4 px-4 sm:px-0 sm:pl-4 sm:pr-4">
+              <MessageDetailsPanel message={message} onClose={() => setDetailsOpen(false)} />
+            </div>
+          )}
           {scheduledAt && <div className="px-4 sm:px-0 sm:pl-10"><ScheduledSendBanner messageId={message.id} scheduledAt={scheduledAt} /></div>}
           <div className="prose max-w-none px-4 text-neutral-900 sm:px-0 sm:pl-16">
             {htmlBody ? (
