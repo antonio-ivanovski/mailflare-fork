@@ -2,8 +2,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { contacts, routingRules } from "@/db/schema";
 import { getFirstEmailAddressEntry, normalizeEmailAddress } from "@/lib/email/address";
-import type { BlockContactInput, ContactInput, MessageContactNames } from "@/lib/contacts/types";
-import { getContactId, getContactNameFromAddress } from "@/lib/contacts/utils";
+import type { BlockContactInput, ContactDisplayName, ContactInput, MessageContactNames } from "@/lib/contacts/types";
+import { getContactId, getContactNameFromAddress, getSenderDisplayName } from "@/lib/contacts/utils";
 import { importGravatarAvatar } from "@/lib/contacts/gravatar";
 
 export async function upsertContactFromAddress(env: CloudflareEnv, input: ContactInput) {
@@ -56,7 +56,7 @@ export async function upsertContactFromAddress(env: CloudflareEnv, input: Contac
 
 export async function getContactDisplayNameMap(env: CloudflareEnv, userId: string, addresses: string[]) {
 	const emails = Array.from(new Set(addresses.map(normalizeEmailAddress).filter(Boolean)));
-	if (emails.length === 0) return new Map<string, string>();
+	if (emails.length === 0) return new Map<string, ContactDisplayName>();
 
 	const db = getDb(env);
 	const rows = await db
@@ -64,11 +64,13 @@ export async function getContactDisplayNameMap(env: CloudflareEnv, userId: strin
 		.from(contacts)
 		.where(and(eq(contacts.userId, userId), inArray(contacts.email, emails)));
 
-	return new Map(
-		rows
-			.filter((contact) => !!contact.displayName)
-			.map((contact) => [contact.email, contact.displayName!]),
-	);
+	const entries = rows
+		.filter((contact) => !!contact.displayName)
+		.map((contact): [string, ContactDisplayName] => [
+			contact.email,
+			{ displayName: contact.displayName!, source: contact.source },
+		]);
+	return new Map(entries);
 }
 
 export async function getContactAvatarMap(env: CloudflareEnv, userId: string, addresses: string[]) {
@@ -95,8 +97,8 @@ export async function getMessageContactNames(
 	const contactMap = await getContactDisplayNameMap(env, userId, [fromAddr, firstTo]);
 
 	return {
-		fromContactName: contactMap.get(normalizeEmailAddress(fromAddr)) ?? null,
-		toContactName: contactMap.get(normalizeEmailAddress(firstTo)) ?? null,
+		fromContactName: getSenderDisplayName(fromAddr, contactMap.get(normalizeEmailAddress(fromAddr))),
+		toContactName: contactMap.get(normalizeEmailAddress(firstTo))?.displayName ?? null,
 	};
 }
 
