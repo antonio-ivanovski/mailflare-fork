@@ -43,6 +43,11 @@ async function logout(page: Page) {
 	await page.goto("/login");
 }
 
+// Leave the documented demo password usable after the lifecycle test removes it.
+test.afterEach(async ({ request }) => {
+	await request.post("/api/seed?reset=1");
+});
+
 async function completeStepUp(page: Page) {
 	const dialog = page.getByRole("dialog");
 	await expect(dialog.getByText("Confirm it is you")).toBeVisible();
