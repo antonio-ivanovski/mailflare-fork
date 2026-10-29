@@ -12,6 +12,7 @@ import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/brow
 import { authErrorText } from "@/lib/auth/error-messages";
 import { isPasskeyCancellation, isPasskeyUnsupported } from "@/lib/auth/webauthn/browser-errors";
 import { finishPasskeySetup, loadPasskeySetupContext, startPasskeySetup } from "./utils";
+import type { PasskeySetupContext } from "./types";
 
 export function PasskeySetupClient({ token }: { token: string }) {
 	const { t } = useLanguage();
@@ -22,6 +23,7 @@ export function PasskeySetupClient({ token }: { token: string }) {
 	const [loading, setLoading] = useState(false);
 	const [checking, setChecking] = useState(Boolean(token));
 	const [email, setEmail] = useState<string | null>(null);
+	const [kind, setKind] = useState<PasskeySetupContext["kind"]>(undefined);
 
 	useEffect(() => {
 		if (!token) return;
@@ -30,7 +32,10 @@ export function PasskeySetupClient({ token }: { token: string }) {
 			.then(({ ok, data }) => {
 				if (cancelled) return;
 				if (!ok) setLinkError(authErrorText(data.code, t, "authError.setupInvalid"));
-				else setEmail(data.email ?? null);
+				else {
+					setEmail(data.email ?? null);
+					setKind(data.kind);
+				}
 			})
 			.catch(() => {
 				if (!cancelled) setLinkError(t("authError.setupInvalid"));
@@ -81,11 +86,21 @@ export function PasskeySetupClient({ token }: { token: string }) {
 		);
 	}
 
+	// A recovery link replaces the account's old sign-in methods; a first-run
+	// link only adds the first passkey.
+	const isRecovery = kind === "recovery" || kind === "admin";
+
 	return (
 		<AuthShell
 			icon={KeyRound}
 			title={email ? t("passkey.setupFor", { email }) : t("passkey.setupTitle")}
-			description={email ? t("passkey.setupAccountDescription") : t("passkey.setupDescription")}
+			description={
+				email
+					? isRecovery
+						? t("passkey.setupRecoveryDescription")
+						: t("passkey.setupAccountDescription")
+					: t("passkey.setupDescription")
+			}
 		>
 			{checking ? (
 				<p className="text-sm text-neutral-500">{t("common.loading")}</p>

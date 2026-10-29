@@ -26,6 +26,7 @@ export function StepUpDialog({
 	action,
 	title,
 	description,
+	step,
 	targetUserId,
 	onOpenChange,
 	onAuthorized,
@@ -38,6 +39,8 @@ export function StepUpDialog({
 	action: string;
 	title?: string;
 	description?: string;
+	/** Position in a multi-step flow, so each confirmation says where it is. */
+	step?: { current: number; total: number };
 	targetUserId?: string;
 	onOpenChange: (open: boolean) => void;
 	/** Return true to keep the dialog open for the next step of the same flow. */
@@ -94,6 +97,11 @@ export function StepUpDialog({
 		<Dialog open={open} onOpenChange={close}>
 			<DialogContent className="sm:max-w-[440px]">
 				<DialogHeader>
+					{step && step.total > 1 && (
+						<p aria-live="polite" className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+							{t("passkey.stepOf", { current: step.current, total: step.total })}
+						</p>
+					)}
 					<DialogTitle>{title ?? t("passkey.verifyTitle")}</DialogTitle>
 					<DialogDescription>{description ?? t("passkey.verifyDescription")}</DialogDescription>
 				</DialogHeader>

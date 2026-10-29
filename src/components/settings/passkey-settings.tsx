@@ -17,6 +17,7 @@ import { StepUpDialog } from "./step-up-dialog";
 import { authErrorText } from "@/lib/auth/error-messages";
 import { isPasskeyCancellation, isPasskeyUnsupported } from "@/lib/auth/webauthn/browser-errors";
 import { ClientRequestError } from "@/lib/http/client-error";
+import type { StepUpAction } from "@/lib/auth/webauthn/step-up-types";
 
 /** The security changes the first-passkey choice can ask for, in order. */
 type PolicyStep = "mfa.disable" | "password.remove" | "second_factor.toggle";
@@ -24,7 +25,7 @@ type PolicyStep = "mfa.disable" | "password.remove" | "second_factor.toggle";
 type PendingAction =
 	| { type: "add"; name: string; first: boolean; hadPassword: boolean }
 	| { type: "remove"; id: string; name: string }
-	| { type: "policy"; step: PolicyStep };
+	| { type: "policy"; steps: PolicyStep[]; index: number };
 
 export function PasskeySettings() {
 	const { t } = useLanguage();
@@ -40,6 +41,7 @@ export function PasskeySettings() {
 	const [checkedId, setCheckedId] = useState<string | null>(null);
 	const [checkError, setCheckError] = useState<string | null>(null);
 	const [choiceOpen, setChoiceOpen] = useState(false);
+	const [notice, setNotice] = useState<string | null>(null);
 	/** Set when the step that just finished enrolled the first passkey. */
 	const choiceAfterAdd = useRef(false);
 
@@ -92,17 +94,23 @@ export function PasskeySettings() {
 			} else if (pending.type === "remove") {
 				await removePasskey(pending.id, token);
 				await refreshSecurityStatus(true);
-			} else if (pending.step === "mfa.disable") {
-				await disableMfa({ stepUpToken: token });
-				await refreshSecurityStatus(true);
-				setPending({ type: "policy", step: "password.remove" });
-				return true;
-			} else if (pending.step === "password.remove") {
-				await removePassword(token);
-				await refreshSecurityStatus(true);
 			} else {
-				await setSecondFactorRequirement(true, token);
-				await refreshSecurityStatus(true);
+				const step = pending.steps[pending.index];
+				if (step === "mfa.disable") {
+					await disableMfa({ stepUpToken: token });
+					await refreshSecurityStatus(true);
+					setNotice(t("passkey.authenticatorOffNotice"));
+				} else if (step === "password.remove") {
+					await removePassword(token);
+					await refreshSecurityStatus(true);
+				} else {
+					await setSecondFactorRequirement(true, token);
+					await refreshSecurityStatus(true);
+				}
+				if (pending.index + 1 < pending.steps.length) {
+					setPending({ ...pending, index: pending.index + 1 });
+					return true;
+				}
 			}
 		} catch (error) {
 			// The server may have applied part of the change; re-read the state
@@ -117,12 +125,13 @@ export function PasskeySettings() {
 		setChoiceOpen(false);
 		if (choice === "keep") return;
 		if (choice === "password-and-passkey") {
-			setPending({ type: "policy", step: "second_factor.toggle" });
+			setPending({ type: "policy", steps: ["second_factor.toggle"], index: 0 });
 			return;
 		}
 		// The authenticator goes first so the password removal leaves no
 		// second-factor requirement behind.
-		setPending({ type: "policy", step: status?.totpEnabled ? "mfa.disable" : "password.remove" });
+		const steps: PolicyStep[] = status?.totpEnabled ? ["mfa.disable", "password.remove"] : ["password.remove"];
+		setPending({ type: "policy", steps, index: 0 });
 	}
 
 	async function submitRename(event: React.FormEvent) {
@@ -147,24 +156,24 @@ export function PasskeySettings() {
 	const canRemove = status.passkeys.length > 1 || otherSignInMethod;
 	const checkedPasskey = checkedId ? status.passkeys.find((passkey) => passkey.id === checkedId) ?? null : null;
 
-	const stepUpAction = pending
-		? pending.type === "add"
-			? "passkey.add"
-			: pending.type === "remove"
-				? "passkey.remove"
-				: pending.step
-		: "";
-	const stepUpTitle = pending?.type === "policy"
-		? pending.step === "mfa.disable"
+	const policy = pending?.type === "policy" ? pending : null;
+	const policyStep = policy ? policy.steps[policy.index] : null;
+	const stepUpAction: StepUpAction = pending?.type === "add"
+		? "passkey.add"
+		: pending?.type === "remove"
+			? "passkey.remove"
+			: policyStep ?? "passkey.add";
+	const stepUpTitle = policy
+		? policyStep === "mfa.disable"
 			? t("mfa.turnOffTitle")
-			: pending.step === "password.remove"
+			: policyStep === "password.remove"
 				? t("passkey.removePasswordTitle")
 				: t("twoStep.requireTitle")
 		: undefined;
-	const stepUpDescription = pending?.type === "policy"
-		? pending.step === "mfa.disable"
+	const stepUpDescription = policy
+		? policyStep === "mfa.disable"
 			? t("mfa.turnOffDescription")
-			: pending.step === "password.remove"
+			: policyStep === "password.remove"
 				? t("passkey.removePasswordDescription")
 				: t("twoStep.requireDescription")
 		: undefined;
@@ -203,6 +212,8 @@ export function PasskeySettings() {
 					</p>
 				)}
 			</div>
+
+			{notice && <p role="status" className="text-sm text-neutral-500">{notice}</p>}
 
 			{status.passkeys.length > 0 && (
 				<ul className="divide-y divide-neutral-100 rounded-2xl border border-neutral-100">
@@ -360,6 +371,7 @@ export function PasskeySettings() {
 				action={stepUpAction}
 				title={stepUpTitle}
 				description={stepUpDescription}
+				step={policy && policy.steps.length > 1 ? { current: policy.index + 1, total: policy.steps.length } : undefined}
 				onOpenChange={(open) => {
 					if (open) return;
 					setPending(null);

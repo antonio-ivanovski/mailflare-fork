@@ -86,7 +86,10 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
     setError(null);
     try {
       const { ok, data } = await submitPasskeyLogin();
-      if (!ok) throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
+      if (!ok) {
+        setError(authErrorText(data.code, t, "passkey.loginFailed"));
+        return;
+      }
       finish(data.redirect);
     } catch (err) {
       setError(isPasskeyCancellation(err) ? t("authError.passkeyCancelled") : t("authError.passkeyUnavailable"));
@@ -106,7 +109,8 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
           setChallengeToken(null);
           setMethods([]);
         }
-        throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
+        setError(authErrorText(data.code, t, "passkey.loginFailed"));
+        return;
       }
       finish(data.redirect);
     } catch (err) {
@@ -171,15 +175,26 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
   }
 
   if (challengeToken) {
+    // An empty method list means the server did not say, so keep the code
+    // field: it is the only method that can still work.
     const hasCodeMethods = methods.length === 0 || methods.includes("totp") || methods.includes("recovery");
+    const canUsePasskey = methods.includes("passkey");
+    const description = canUsePasskey
+      ? hasCodeMethods
+        ? t("auth.mfaPasskeyOrCodeDescription")
+        : t("auth.mfaPasskeyDescription")
+      : methods.length === 0 || methods.includes("recovery")
+        ? t("auth.mfaDescription")
+        : t("auth.mfaCodeDescription");
+    const codeLabel = methods.includes("recovery") ? t("auth.codeOrRecovery") : t("auth.codeLabel");
     return (
       <AuthShell
         icon={ShieldCheck}
         title={t("auth.mfaTitle")}
-        description={t("auth.mfaDescription")}
+        description={description}
       >
         <form onSubmit={onSubmitCode} className="space-y-5">
-          {methods.includes("passkey") && (
+          {canUsePasskey && (
             <div className="space-y-4">
               <Button
                 type="button"
@@ -190,7 +205,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
                 <KeyRound className="h-4 w-4" />
                 {t("passkey.usePasskey")}
               </Button>
-              {(methods.includes("totp") || methods.includes("recovery")) && (
+              {hasCodeMethods && (
                 <p className="text-center text-xs uppercase tracking-wide text-neutral-400">{t("passkey.orCode")}</p>
               )}
             </div>
@@ -198,7 +213,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
           {hasCodeMethods && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="code">{t("auth.codeOrRecovery")}</Label>
+                <Label htmlFor="code">{codeLabel}</Label>
                 <Input
                   id="code"
                   name="code"
@@ -225,6 +240,9 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             <p id="mfa-error" role="alert" className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               {error}
             </p>
+          )}
+          {!hasCodeMethods && (
+            <p className="text-xs leading-5 text-neutral-500">{t("passkey.lostAllHint")}</p>
           )}
           <button
             type="button"

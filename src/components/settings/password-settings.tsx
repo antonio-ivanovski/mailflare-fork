@@ -98,7 +98,15 @@ export function PasswordSettings() {
 							{t("passkey.removePassword")}
 						</Button>
 					</div>
-					{status.passkeys.length === 0 && <p className="text-xs leading-5 text-neutral-500">{t("passkey.addBeforeRemovingPassword")}</p>}
+					{status.passkeys.length === 0 ? (
+						<p className="text-xs leading-5 text-neutral-500">{t("passkey.addBeforeRemovingPassword")}</p>
+					) : (
+						// Without a second step the password is the weakest factor, so the
+						// passkey-only account is the better one.
+						!status.requireSecondFactor && (
+							<p className="text-xs leading-5 text-neutral-500">{t("passkey.removePasswordRecommended")}</p>
+						)
+					)}
 				</form>
 			) : (
 				<form

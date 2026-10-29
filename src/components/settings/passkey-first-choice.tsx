@@ -11,6 +11,7 @@ type Option = {
 	id: PasskeyPolicyChoice;
 	title: string;
 	hint: string;
+	notes?: string[];
 	icon: typeof KeyRound;
 	iconClass: string;
 };
@@ -38,6 +39,7 @@ export function PasskeyFirstChoice({
 				id: "passkey-only",
 				title: t("passkey.choicePasskeyOnly"),
 				hint: t("passkey.choiceRemovesPasswordAndCodes"),
+				notes: [t("passkey.choiceTwoSteps"), t("passkey.choiceRecoveryNote")],
 				icon: KeyRound,
 				iconClass: "text-neutral-500",
 			},
@@ -54,6 +56,7 @@ export function PasskeyFirstChoice({
 				id: "passkey-only",
 				title: t("passkey.choicePasskeyOnly"),
 				hint: t("passkey.choiceRemovesPassword"),
+				notes: [t("passkey.choiceRecoveryNote")],
 				icon: KeyRound,
 				iconClass: "text-neutral-500",
 			},
@@ -61,6 +64,7 @@ export function PasskeyFirstChoice({
 				id: "password-and-passkey",
 				title: t("passkey.choicePasswordAndPasskey"),
 				hint: t("passkey.choicePasswordAndPasskeyHint"),
+				notes: [t("passkey.choiceRecoveryNote")],
 				icon: ShieldCheck,
 				iconClass: "text-green-600",
 			},
@@ -92,14 +96,16 @@ export function PasskeyFirstChoice({
 							<span className="min-w-0">
 								<span className="block text-sm font-medium text-neutral-900">{option.title}</span>
 								<span className="mt-0.5 block text-sm leading-5 text-neutral-500">{option.hint}</span>
+								{option.notes?.map((note) => (
+									<span key={note} className="mt-1 flex items-start gap-1.5 text-xs leading-5 text-neutral-400">
+										<Info className="mt-0.5 h-3 w-3 shrink-0" />
+										{note}
+									</span>
+								))}
 							</span>
 						</button>
 					))}
 				</div>
-				<p className="flex items-start gap-2 text-xs leading-5 text-neutral-500">
-					<Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-					{t("passkey.choiceRecoveryNote")}
-				</p>
 				<Button type="button" variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>
 					{t("passkey.firstChoiceLater")}
 				</Button>
