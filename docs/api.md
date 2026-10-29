@@ -216,6 +216,8 @@ Sensitive changes (`passkey.add`, `passkey.remove`, `password.set`, `password.re
 
 Turning the authenticator app off (`POST /api/settings/mfa/disable`) leaves the second-step requirement as the account had it: a passkey can take over as the second step, but an account that never required one does not start requiring it. Removing the password (`DELETE /api/settings/password`) and removing the authenticator app are separate changes, so a client that moves an account to passkey-only confirms each one on its own.
 
+Adding a password to a passkey-only account (`POST /api/settings/password`) accepts `{ newPassword, stepUpToken, requireSecondFactor? }`. A single `password.set` grant authorizes saving the password and its selected second-step policy together; omitting `requireSecondFactor` preserves the current policy. The web client asks for this choice after verification but before saving. Choosing to keep only passkeys saves nothing.
+
 ## Searching
 
 `GET /api/messages?q=...` (session) and `GET /api/v1/messages?q=...` (API key, `read` scope) accept the same query grammar, backed by an FTS5 index over subject, sender, recipients and body:

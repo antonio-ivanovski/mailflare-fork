@@ -123,6 +123,14 @@ async function addFirstPasskey(page: Page, choice: string) {
 	await setPresence(page, false);
 	const dialog = page.getByRole("dialog", { name: "How would you like to sign in?" });
 	await expect(dialog).toBeVisible({ timeout: 30_000 });
+	await expect(dialog.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
+	await expect(dialog.getByRole("button", { name: "Not now" })).toHaveCount(0);
+	await expect(dialog.getByText("If your chosen option requires a passkey", { exact: false })).toHaveCount(1);
+	await expect(dialog.getByRole("button").getByText("If your chosen option requires a passkey", { exact: false })).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(dialog).toBeVisible();
+	await page.mouse.click(1, 1);
+	await expect(dialog).toBeVisible();
 	await dialog.getByRole("button", { name: choice }).click();
 }
 
@@ -282,6 +290,79 @@ test("turning the authenticator off keeps the two-step policy as it was", async 
 	await page.getByRole("button", { name: "Turn off" }).click();
 	await completeStepUp(page);
 	await expect(toggle).toHaveAttribute("aria-checked", "false");
+});
+
+test("adding a password chooses its second-factor policy with one passkey scan", async ({ page, request }) => {
+	test.setTimeout(240_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.15");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await addFirstPasskey(page, "Use only passkeys");
+	await completeStepUp(page, { title: "Remove your password?" });
+	await expect(page.getByLabel("New password", { exact: true })).toBeVisible();
+
+	let scans = 0;
+	let saves = 0;
+	page.on("request", (request) => {
+		if (request.method() !== "POST") return;
+		if (new URL(request.url()).pathname === "/api/auth/step-up/verify") scans++;
+		if (new URL(request.url()).pathname === "/api/settings/password") saves++;
+	});
+	const dialog = page.getByRole("dialog", { name: "How would you like to sign in?" });
+	async function startPassword() {
+		await page.getByLabel("New password", { exact: true }).fill(PASSWORD);
+		await page.getByLabel("Confirm new password", { exact: true }).fill(PASSWORD);
+		await page.getByRole("button", { name: "Set password", exact: true }).click();
+		await completeStepUp(page);
+		await expect(dialog).toBeVisible();
+	}
+
+	await startPassword();
+	expect(scans).toBe(1);
+	expect(saves).toBe(0);
+	const bounds = await dialog.boundingBox();
+	if (!bounds) throw new Error("Password policy dialog has no bounds");
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.y).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+	await page.screenshot({ path: test.info().outputPath("password-policy-mobile.png"), animations: "disabled" });
+	const sessionToken = await page.evaluate(() => localStorage.getItem("mailflare-session-token"));
+	const unverified = await request.post("/api/settings/password", {
+		headers: { Authorization: `Bearer ${sessionToken}` },
+		data: { newPassword: PASSWORD, stepUpToken: "invalid-proof", requireSecondFactor: false },
+	});
+	expect(unverified.status()).toBe(401);
+	await dialog.getByRole("button", { name: "Keep using only passkeys" }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByLabel("New password", { exact: true })).toHaveValue("");
+	expect(saves).toBe(0);
+
+	await startPassword();
+	await dialog.getByRole("button", { name: "Use a passkey as your second factor" }).click();
+	await expect(dialog).toBeHidden({ timeout: 30_000 });
+	const toggle = page.getByRole("switch", { name: "Require a second step after password sign-in" });
+	await expect(toggle).toHaveAttribute("aria-checked", "true");
+	expect(scans).toBe(2);
+	expect(saves).toBe(1);
+
+	await page.getByRole("button", { name: "Remove password", exact: true }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "Remove password", exact: true }).click();
+	await completeStepUp(page);
+	await expect(page.getByLabel("New password", { exact: true })).toBeVisible();
+	const before = scans;
+	await startPassword();
+	await dialog.getByRole("button", { name: "Keep my password without a second step" }).click();
+	await expect(dialog).toBeHidden({ timeout: 30_000 });
+	await expect(toggle).toHaveAttribute("aria-checked", "false");
+	expect(scans).toBe(before + 1);
+	expect(saves).toBe(2);
+	await logout(page);
+	await loginWithPassword(page);
 });
 
 test("first passkey removes the password and the authenticator codes together", async ({ page, request }) => {

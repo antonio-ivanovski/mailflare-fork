@@ -56,11 +56,10 @@ function d1(sqlite) {
 	};
 }
 
-function database(beforeMigration) {
+function database() {
 	const sqlite = new Database(":memory:");
 	sqlite.pragma("foreign_keys = ON");
 	for (const migration of migrations) {
-		if (beforeMigration && migration.name >= beforeMigration) continue;
 		for (const statement of migration.statements) sqlite.exec(statement);
 	}
 	return sqlite;
@@ -99,9 +98,9 @@ test("a newer backup restores into a database that has the passkey table but not
 	source.prepare("UPDATE passkey_credentials SET aaguid = 'test-aaguid' WHERE id = 'p1'").run();
 	const backup = await exportDatabaseRecords(d1(source));
 
-	// Simulates an installation that applied the passkey migration but has not
-	// yet applied the later bound-grant migration.
-	const target = database("0080");
+	// Simulates an installation whose passkey table predates the aaguid column.
+	const target = database();
+	target.exec("ALTER TABLE passkey_credentials DROP COLUMN aaguid");
 	await restoreDatabaseRecords(d1(target), backup.buffer.slice(backup.byteOffset, backup.byteOffset + backup.byteLength));
 	assert.equal(target.prepare("SELECT COUNT(*) AS count FROM passkey_credentials").get().count, 1);
 	assert.equal(target.prepare("PRAGMA table_info(passkey_credentials)").all().some((column) => column.name === "aaguid"), false);

@@ -13,6 +13,7 @@ import { ClientRequestError } from "@/lib/http/client-error";
 import { removePassword, setPassword } from "./passkey-settings-utils";
 import { refreshSecurityStatus, useSecurityStatus } from "./security-status-store";
 import { StepUpDialog } from "./step-up-dialog";
+import { PasskeyFirstChoice, type PasskeyPolicyChoice } from "./passkey-first-choice";
 
 /**
  * Password controls that understand passkey-only accounts: set one, change it,
@@ -29,6 +30,7 @@ export function PasswordSettings() {
 	const [busy, setBusy] = useState(false);
 	const [pending, setPending] = useState<"set" | "remove" | null>(null);
 	const [confirmRemove, setConfirmRemove] = useState(false);
+	const [passwordProof, setPasswordProof] = useState<string | null>(null);
 
 	async function change(event: React.FormEvent) {
 		event.preventDefault();
@@ -56,16 +58,40 @@ export function PasswordSettings() {
 	async function authorized(token: string) {
 		setError(null);
 		if (pending === "set") {
-			await setPassword(newPassword, token);
-			setNewPassword("");
-			setConfirmPassword("");
-			setMessage(t("passkey.passwordSet"));
+			setPasswordProof(token);
+			setPending(null);
+			return;
 		} else {
 			await removePassword(token);
 			setMessage(t("passkey.passwordRemoved"));
 		}
 		await refreshSecurityStatus(true);
 		setPending(null);
+	}
+
+	async function choosePasswordPolicy(choice: PasskeyPolicyChoice) {
+		if (!passwordProof || busy) return;
+		if (choice === "passkey-only") {
+			setPasswordProof(null);
+			setNewPassword("");
+			setConfirmPassword("");
+			return;
+		}
+		setBusy(true);
+		setError(null);
+		try {
+			await setPassword(newPassword, passwordProof, choice === "password-and-passkey");
+			setMessage(t("passkey.passwordSet"));
+			setNewPassword("");
+			setConfirmPassword("");
+			await refreshSecurityStatus(true);
+		} catch (err) {
+			setError(authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "settings.password.failed"));
+			await refreshSecurityStatus(true);
+		} finally {
+			setPasswordProof(null);
+			setBusy(false);
+		}
 	}
 
 	if (!status) return <p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("settings.password.failed") : t("mfa.loading")}</p>;
@@ -168,6 +194,14 @@ export function PasswordSettings() {
 				action={pending === "set" ? "password.set" : "password.remove"}
 				onOpenChange={(open) => !open && setPending(null)}
 				onAuthorized={authorized}
+			/>
+			<PasskeyFirstChoice
+				open={passwordProof !== null}
+				context="add-password"
+				totpEnabled={status.totpEnabled}
+				busy={busy}
+				onOpenChange={() => {}}
+				onChoose={(choice) => void choosePasswordPolicy(choice)}
 			/>
 		</div>
 	);

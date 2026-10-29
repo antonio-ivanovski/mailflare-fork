@@ -2,7 +2,6 @@
 
 import { AlertTriangle, Info, KeyRound, ShieldCheck } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export type PasskeyPolicyChoice = "passkey-only" | "password-and-passkey" | "keep";
@@ -25,21 +24,26 @@ export function PasskeyFirstChoice({
 	totpEnabled,
 	onOpenChange,
 	onChoose,
+	context = "first-passkey",
+	busy = false,
 }: {
 	open: boolean;
 	totpEnabled: boolean;
 	onOpenChange: (open: boolean) => void;
 	onChoose: (choice: PasskeyPolicyChoice) => void;
+	context?: "first-passkey" | "add-password";
+	busy?: boolean;
 }) {
 	const { t } = useLanguage();
+	const addingPassword = context === "add-password";
 
-	const options: Option[] = totpEnabled
+	const options: Option[] = totpEnabled && !addingPassword
 		? [
 			{
 				id: "passkey-only",
 				title: t("passkey.choicePasskeyOnly"),
 				hint: t("passkey.choiceRemovesPasswordAndCodes"),
-				notes: [t("passkey.choiceTwoSteps"), t("passkey.choiceRecoveryNote")],
+				notes: [t("passkey.choiceTwoSteps")],
 				icon: KeyRound,
 				iconClass: "text-neutral-500",
 			},
@@ -54,17 +58,15 @@ export function PasskeyFirstChoice({
 		: [
 			{
 				id: "passkey-only",
-				title: t("passkey.choicePasskeyOnly"),
-				hint: t("passkey.choiceRemovesPassword"),
-				notes: [t("passkey.choiceRecoveryNote")],
+				title: t(addingPassword ? "passkey.choiceKeepPasskeysOnly" : "passkey.choicePasskeyOnly"),
+				hint: t(addingPassword ? "passkey.choiceDiscardPassword" : "passkey.choiceRemovesPassword"),
 				icon: KeyRound,
 				iconClass: "text-neutral-500",
 			},
 			{
 				id: "password-and-passkey",
 				title: t("passkey.choicePasswordAndPasskey"),
-				hint: t("passkey.choicePasswordAndPasskeyHint"),
-				notes: [t("passkey.choiceRecoveryNote")],
+				hint: t(totpEnabled ? "twoStep.requireDescription" : "passkey.choicePasswordAndPasskeyHint"),
 				icon: ShieldCheck,
 				iconClass: "text-green-600",
 			},
@@ -78,18 +80,29 @@ export function PasskeyFirstChoice({
 		];
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[480px]">
+		<Dialog open={open} onOpenChange={(next) => { if (next) onOpenChange(true); }}>
+			<DialogContent
+				className="sm:max-w-[480px]"
+				showCloseButton={false}
+				onEscapeKeyDown={(event) => event.preventDefault()}
+				onInteractOutside={(event) => event.preventDefault()}
+				aria-busy={busy}
+			>
 				<DialogHeader>
 					<DialogTitle>{t("passkey.firstChoiceTitle")}</DialogTitle>
-					<DialogDescription>{t("passkey.firstChoiceDescription")}</DialogDescription>
+					<DialogDescription>{t(addingPassword ? "passkey.passwordChoiceDescription" : "passkey.firstChoiceDescription")}</DialogDescription>
 				</DialogHeader>
+				<p className="mb-4 flex items-start gap-2 text-xs leading-5 text-neutral-500">
+					<Info className="mt-0.5 h-4 w-4 shrink-0" />
+					<span>{t("passkey.choiceRecoveryNote")}</span>
+				</p>
 				<div className="space-y-2">
 					{options.map((option) => (
 						<button
 							key={option.id}
 							type="button"
 							onClick={() => onChoose(option.id)}
+							disabled={busy}
 							className="flex w-full items-start gap-3 rounded-2xl border border-neutral-200 p-3 text-left transition-colors hover:border-neutral-300 hover:bg-neutral-50"
 						>
 							<option.icon className={`mt-0.5 h-4 w-4 shrink-0 ${option.iconClass}`} />
@@ -106,9 +119,6 @@ export function PasskeyFirstChoice({
 						</button>
 					))}
 				</div>
-				<Button type="button" variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>
-					{t("passkey.firstChoiceLater")}
-				</Button>
 			</DialogContent>
 		</Dialog>
 	);

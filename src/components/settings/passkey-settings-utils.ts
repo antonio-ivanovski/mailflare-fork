@@ -148,12 +148,12 @@ export async function generateRecoveryCodes(stepUpToken: string): Promise<string
 	return data.recoveryCodes;
 }
 
-export async function setPassword(newPassword: string, stepUpToken: string): Promise<void> {
+export async function setPassword(newPassword: string, stepUpToken: string, requireSecondFactor?: boolean): Promise<void> {
 	const res = await authFetch("/api/settings/password", {
 		method: "POST",
 		redirectOnUnauthorized: false,
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ newPassword, stepUpToken }),
+		body: JSON.stringify({ newPassword, stepUpToken, requireSecondFactor }),
 	});
 	if (!res.ok) throw requestError(await res.json(), "Could not set a password");
 }

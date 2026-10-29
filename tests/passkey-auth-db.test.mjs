@@ -93,9 +93,7 @@ test("requiring a second step needs an enrolled factor", () => {
 
 test("PostgreSQL and MySQL ship the passkey triggers and bound-grant columns", () => {
 	for (const directory of ["drizzle/migrations-pg", "drizzle/migrations-mysql"]) {
-		const sql = ["0003_passkeys.sql", "0004_bound_step_up_grants.sql"]
-			.map((name) => readFileSync(new URL(`../${directory}/${name}`, import.meta.url), "utf8"))
-			.join("\n");
+		const sql = readFileSync(new URL(`../${directory}/0003_passkeys_and_step_up_grants.sql`, import.meta.url), "utf8");
 		for (const needle of ["passkey_count", "last-auth-method", "second-factor-unavailable", "security_version", "target_user_id"]) {
 			assert.ok(sql.includes(needle), `${directory} lacks ${needle}`);
 		}

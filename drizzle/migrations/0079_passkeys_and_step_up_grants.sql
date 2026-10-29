@@ -1,5 +1,6 @@
 ALTER TABLE `users` ADD `require_second_factor` integer DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE `users` ADD `passkey_count` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `users` ADD `security_version` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 UPDATE `users` SET `require_second_factor` = `totp_enabled`;--> statement-breakpoint
 CREATE TABLE `passkey_credentials` (
 	`id` text PRIMARY KEY NOT NULL,
@@ -11,6 +12,7 @@ CREATE TABLE `passkey_credentials` (
 	`transports` text,
 	`device_type` text NOT NULL,
 	`backed_up` integer DEFAULT false NOT NULL,
+	`aaguid` text,
 	`name` text NOT NULL,
 	`last_used_at` integer,
 	`created_at` integer NOT NULL,
@@ -56,6 +58,8 @@ CREATE TABLE `auth_step_ups` (
 	`session_hash` text NOT NULL,
 	`token_hash` text NOT NULL,
 	`purpose` text NOT NULL,
+	`target_user_id` text,
+	`security_version` integer DEFAULT 0 NOT NULL,
 	`expires_at` integer NOT NULL,
 	`used_at` integer,
 	`created_at` integer NOT NULL,
@@ -87,4 +91,9 @@ CREATE TRIGGER `users_last_password_update` BEFORE UPDATE OF `password_hash` ON 
 WHEN NEW.`password_hash` = '!passkey-only' AND NEW.`passkey_count` = 0
 BEGIN
 	SELECT RAISE(ABORT, 'last-auth-method');
+END;--> statement-breakpoint
+CREATE TRIGGER `users_require_second_factor_update` BEFORE UPDATE OF `require_second_factor` ON `users`
+WHEN NEW.`require_second_factor` = 1 AND NEW.`passkey_count` = 0 AND NEW.`totp_enabled` = 0 AND NEW.`deleted_at` IS NULL
+BEGIN
+	SELECT RAISE(ABORT, 'second-factor-unavailable');
 END;

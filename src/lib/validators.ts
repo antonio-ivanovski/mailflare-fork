@@ -187,6 +187,7 @@ export const passkeyRenameSchema = z.object({
 export const passwordSetSchema = z.object({
 	newPassword: z.string().min(8).max(128),
 	stepUpToken: z.string().min(8).max(200),
+	requireSecondFactor: z.boolean().optional(),
 });
 
 export const requireSecondFactorSchema = z.object({

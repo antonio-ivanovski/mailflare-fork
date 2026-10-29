@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getDb } from "@/db";
@@ -69,7 +69,23 @@ export async function POST(request: Request) {
 		return authError("verification_required", 401);
 	}
 	const db = getDb(env);
-	await db.update(users).set({ passwordHash: hashPassword(parsed.data.newPassword) }).where(eq(users.id, user.id));
+	try {
+		const updated = await db.update(users).set({
+			passwordHash: hashPassword(parsed.data.newPassword),
+			...(parsed.data.requireSecondFactor === undefined ? {} : { requireSecondFactor: parsed.data.requireSecondFactor }),
+		}).where(and(
+			eq(users.id, user.id),
+			eq(users.passwordHash, user.passwordHash),
+			eq(users.securityVersion, user.securityVersion),
+			eq(users.totpEnabled, user.totpEnabled),
+			eq(users.requireSecondFactor, user.requireSecondFactor),
+			...(parsed.data.requireSecondFactor ? [gt(users.passkeyCount, 0)] : []),
+		)).returning({ id: users.id });
+		if (!updated.length) return authError("verification_required", 409);
+	} catch (error) {
+		if (isLastAuthMethodError(error)) return authError("last_method", 409);
+		throw error;
+	}
 	await bumpSecurityVersion(db, user.id);
 	await deleteUserSessions(env, user.id, sessionToken);
 	await recordAuthActivity(env, { action: "auth.password_set", userId: user.id, request });
