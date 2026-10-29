@@ -3,9 +3,10 @@ import { eq } from "drizzle-orm";
 import { getEnv } from "@/lib/cloudflare";
 import { getDb } from "@/db";
 import { mailboxes, users } from "@/db/schema";
-import { hashPassword } from "@/lib/auth/password";
+import { hashPassword, PASSWORDLESS_PASSWORD_HASH } from "@/lib/auth/password";
 import { hasAdminAccount } from "@/lib/auth/setup";
 import { SESSION_COOKIE } from "@/lib/auth/session";
+import { createEnrollmentGrant } from "@/lib/auth/webauthn/grants";
 import { newId } from "@/lib/ids";
 import { firstRunRegisterSchema } from "@/lib/validators";
 import { addDomainForUser } from "@/lib/domains/service";
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
 	const username = firstRunParsed.data.username.toLowerCase().trim();
 	const email = `${username}@${domainName}`;
 	const password = firstRunParsed.data.password;
+	const usePasskey = !!firstRunParsed.data.usePasskey;
 	const name = username;
 
 	const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
 		remoteContentMode: "ask",
 		email,
 		resetEmail: firstRunParsed.data.resetEmail,
-		passwordHash: hashPassword(password),
+		passwordHash: usePasskey ? PASSWORDLESS_PASSWORD_HASH : hashPassword(password!),
 		name,
 		role: "admin",
 		isPrimaryAdmin: true,
@@ -107,7 +109,14 @@ export async function POST(request: Request) {
 		);
 	}
 
-	const response = NextResponse.json({ ok: true, redirect: "/login" });
+	// A passkey-only first account has no password, so it gets a one-time link
+	// that can only enrol a passkey. A session is issued after that succeeds.
+	const setupToken = usePasskey ? await createEnrollmentGrant(env, { userId, kind: "setup" }) : null;
+	const response = NextResponse.json({
+		ok: true,
+		redirect: setupToken ? `/setup/passkey?token=${encodeURIComponent(setupToken)}` : "/login",
+		...(setupToken ? { requiresPasskeySetup: true } : {}),
+	});
 	response.headers.set("Cache-Control", "no-store");
 	response.cookies.set(SESSION_COOKIE, "", {
 		httpOnly: true,

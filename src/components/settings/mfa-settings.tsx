@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import type { MfaStatusResponse } from "./types";
 import type { MfaDialogStep } from "./mfa-settings-types";
 import { beginMfaEnrollment, confirmMfaEnrollment, disableMfa, loadMfaStatus, regenerateRecoveryCodes } from "./utils";
+import { loadSecurityStatus, stepUpWithPasskey } from "./passkey-settings-utils";
+import type { SecurityStatus } from "./passkey-settings-types";
 
 /**
  * Settings > Account > Security card for TOTP. Enrolment is a three-step
@@ -19,18 +21,26 @@ import { beginMfaEnrollment, confirmMfaEnrollment, disableMfa, loadMfaStatus, re
 export function MfaSettings() {
 	const { t } = useLanguage();
 	const [status, setStatus] = useState<MfaStatusResponse | null>(null);
+	const [security, setSecurity] = useState<SecurityStatus | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [enrollOpen, setEnrollOpen] = useState(false);
 	const [disableOpen, setDisableOpen] = useState(false);
 	const [codesOpen, setCodesOpen] = useState(false);
 
-	useEffect(() => {
-		loadMfaStatus().then(setStatus).catch((err) => setError(err instanceof Error ? err.message : t("mfa.loadFailed")));
-	}, [t]);
-
 	async function refresh() {
-		setStatus(await loadMfaStatus());
+		const [nextStatus, nextSecurity] = await Promise.all([loadMfaStatus(), loadSecurityStatus()]);
+		setStatus(nextStatus);
+		setSecurity(nextSecurity);
 	}
+
+	useEffect(() => {
+		Promise.all([loadMfaStatus(), loadSecurityStatus()])
+			.then(([nextStatus, nextSecurity]) => {
+				setStatus(nextStatus);
+				setSecurity(nextSecurity);
+			})
+			.catch((err) => setError(err instanceof Error ? err.message : t("mfa.loadFailed")));
+	}, [t]);
 
 	if (!status) return <p className="text-sm text-neutral-500">{error ?? t("mfa.loading")}</p>;
 
@@ -68,9 +78,9 @@ export function MfaSettings() {
 				)}
 			</div>
 
-			<EnrollDialog open={enrollOpen} onOpenChange={setEnrollOpen} onDone={refresh} />
-			<DisableDialog open={disableOpen} onOpenChange={setDisableOpen} onDone={refresh} />
-			<RecoveryCodesDialog open={codesOpen} onOpenChange={setCodesOpen} onDone={refresh} />
+			<EnrollDialog open={enrollOpen} onOpenChange={setEnrollOpen} onDone={refresh} security={security} />
+			<DisableDialog open={disableOpen} onOpenChange={setDisableOpen} onDone={refresh} hasPassword={security?.passwordSet ?? true} />
+			<RecoveryCodesDialog open={codesOpen} onOpenChange={setCodesOpen} onDone={refresh} security={security} />
 		</div>
 	);
 }
@@ -103,7 +113,7 @@ function RecoveryCodesList({ codes }: { codes: string[] }) {
 	);
 }
 
-function EnrollDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void> }) {
+function EnrollDialog({ open, onOpenChange, onDone, security }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void>; security: SecurityStatus | null }) {
 	const { t } = useLanguage();
 	const [step, setStep] = useState<MfaDialogStep>("password");
 	const [password, setPassword] = useState("");
@@ -113,6 +123,7 @@ function EnrollDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
 	const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const usePasskey = !!security && (!security.passwordSet || (security.requireSecondFactor && !security.totpEnabled));
 
 	function reset() {
 		setStep("password");
@@ -129,7 +140,9 @@ function EnrollDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
 		setBusy(true);
 		setError(null);
 		try {
-			const enrollment = await beginMfaEnrollment(password);
+			const enrollment = usePasskey
+				? await beginMfaEnrollment(null, await stepUpWithPasskey())
+				: await beginMfaEnrollment(password);
 			setQrSvg(enrollment.qrSvg);
 			setSecret(enrollment.secret);
 			setStep("scan");
@@ -170,10 +183,14 @@ function EnrollDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
 							<DialogTitle>{t("mfa.enrollTitle")}</DialogTitle>
 							<DialogDescription>{t("mfa.enrollDescription")}</DialogDescription>
 						</DialogHeader>
-						<div className="space-y-2">
-							<Label htmlFor="mfa-password">{t("common.password")}</Label>
-							<Input id="mfa-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
-						</div>
+						{usePasskey ? (
+							<p className="text-sm leading-6 text-neutral-500">{t("passkey.verifyHint")}</p>
+						) : (
+							<div className="space-y-2">
+								<Label htmlFor="mfa-password">{t("common.password")}</Label>
+								<Input id="mfa-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
+							</div>
+						)}
 						{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 						<Button type="submit" disabled={busy}>{busy ? t("common.pleaseWait") : t("common.continue")}</Button>
 					</form>
@@ -212,7 +229,7 @@ function EnrollDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
 	);
 }
 
-function DisableDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void> }) {
+function DisableDialog({ open, onOpenChange, onDone, hasPassword }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void>; hasPassword: boolean }) {
 	const { t } = useLanguage();
 	const [password, setPassword] = useState("");
 	const [code, setCode] = useState("");
@@ -224,7 +241,10 @@ function DisableDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCh
 		setBusy(true);
 		setError(null);
 		try {
-			await disableMfa(password, code);
+			await disableMfa({
+				code,
+				...(hasPassword ? { password } : { stepUpToken: await stepUpWithPasskey() }),
+			});
 			await onDone();
 			onOpenChange(false);
 			setPassword("");
@@ -244,10 +264,14 @@ function DisableDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCh
 						<DialogTitle>{t("mfa.turnOffTitle")}</DialogTitle>
 						<DialogDescription>{t("mfa.turnOffDescription")}</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-2">
-						<Label htmlFor="mfa-off-password">{t("common.password")}</Label>
-						<Input id="mfa-off-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-					</div>
+					{hasPassword ? (
+						<div className="space-y-2">
+							<Label htmlFor="mfa-off-password">{t("common.password")}</Label>
+							<Input id="mfa-off-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+						</div>
+					) : (
+						<p className="text-sm leading-6 text-neutral-500">{t("passkey.verifyHint")}</p>
+					)}
 					<div className="space-y-2">
 						<Label htmlFor="mfa-off-code">{t("mfa.code")}</Label>
 						<Input id="mfa-off-code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required />
@@ -260,20 +284,24 @@ function DisableDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCh
 	);
 }
 
-function RecoveryCodesDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void> }) {
+function RecoveryCodesDialog({ open, onOpenChange, onDone, security }: { open: boolean; onOpenChange: (open: boolean) => void; onDone: () => Promise<void>; security: SecurityStatus | null }) {
 	const { t } = useLanguage();
 	const [password, setPassword] = useState("");
+	const [code, setCode] = useState("");
 	const [codes, setCodes] = useState<string[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const usePasskey = !!security && (!security.passwordSet || (security.requireSecondFactor && !security.totpEnabled));
+	const needsCode = !!security?.requireSecondFactor && !!security.totpEnabled;
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault();
 		setBusy(true);
 		setError(null);
 		try {
-			setCodes(await regenerateRecoveryCodes(password));
+			setCodes(await regenerateRecoveryCodes(usePasskey ? { stepUpToken: await stepUpWithPasskey() } : { password, code: needsCode ? code : undefined }));
 			setPassword("");
+			setCode("");
 			await onDone();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t("mfa.generateFailed"));
@@ -306,10 +334,20 @@ function RecoveryCodesDialog({ open, onOpenChange, onDone }: { open: boolean; on
 							<DialogTitle>{t("mfa.generateTitle")}</DialogTitle>
 							<DialogDescription>{t("mfa.generateDescription")}</DialogDescription>
 						</DialogHeader>
-						<div className="space-y-2">
-							<Label htmlFor="rc-password">{t("common.password")}</Label>
-							<Input id="rc-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
-						</div>
+						{usePasskey ? (
+							<p className="text-sm leading-6 text-neutral-500">{t("passkey.verifyHint")}</p>
+						) : (
+							<div className="space-y-2">
+								<Label htmlFor="rc-password">{t("common.password")}</Label>
+								<Input id="rc-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
+							</div>
+						)}
+						{!usePasskey && needsCode && (
+							<div className="space-y-2">
+								<Label htmlFor="rc-code">{t("mfa.sixDigitCode")}</Label>
+								<Input id="rc-code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="123 456" required />
+							</div>
+						)}
 						{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 						<Button type="submit" disabled={busy}>{busy ? t("common.pleaseWait") : t("mfa.generate")}</Button>
 					</form>

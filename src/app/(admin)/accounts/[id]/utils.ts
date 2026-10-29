@@ -110,7 +110,7 @@ export async function fetchManagedAccount(accountId: string): Promise<ManagedAcc
 	return data.account;
 }
 
-export async function saveManagedAccount(account: ManagedAccount): Promise<void> {
+export async function saveManagedAccount(account: ManagedAccount, stepUpToken?: string): Promise<void> {
 	const response = await authFetch(`/api/accounts/${account.id}`, {
 		method: "PATCH",
 		headers: { "Content-Type": "application/json" },
@@ -123,6 +123,7 @@ export async function saveManagedAccount(account: ManagedAccount): Promise<void>
 			canManageUsers: account.canManageUsers,
 			forwardingEmail: account.forwardingEmail,
 			password: account.newPassword || undefined,
+			stepUpToken,
 		}),
 	});
 	const data = (await response.json()) as { error?: string };

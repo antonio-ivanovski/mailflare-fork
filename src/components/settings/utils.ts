@@ -130,11 +130,11 @@ export async function loadMfaStatus(): Promise<MfaStatusResponse> {
 	return data;
 }
 
-export async function beginMfaEnrollment(password: string): Promise<Required<Pick<MfaEnrollmentResponse, "secret" | "otpauthUrl" | "qrSvg">>> {
+export async function beginMfaEnrollment(password: string | null, stepUpToken?: string): Promise<Required<Pick<MfaEnrollmentResponse, "secret" | "otpauthUrl" | "qrSvg">>> {
 	const res = await authFetch("/api/settings/mfa/enroll", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ password }),
+		body: JSON.stringify({ password: password ?? undefined, stepUpToken }),
 	});
 	const data = (await res.json()) as MfaEnrollmentResponse;
 	if (!res.ok || !data.secret || !data.otpauthUrl || !data.qrSvg) throw new Error(errorMessage(data, "Could not start enrolment"));
@@ -152,21 +152,21 @@ export async function confirmMfaEnrollment(code: string): Promise<string[]> {
 	return data.recoveryCodes;
 }
 
-export async function disableMfa(password: string, code: string): Promise<void> {
+export async function disableMfa(input: { password?: string; stepUpToken?: string; code: string }): Promise<void> {
 	const res = await authFetch("/api/settings/mfa/disable", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ password, code }),
+		body: JSON.stringify(input),
 	});
 	const data = (await res.json()) as { error?: unknown };
 	if (!res.ok) throw new Error(errorMessage(data, "Could not turn off two-factor authentication"));
 }
 
-export async function regenerateRecoveryCodes(password: string): Promise<string[]> {
+export async function regenerateRecoveryCodes(input: { password?: string; stepUpToken?: string; code?: string }): Promise<string[]> {
 	const res = await authFetch("/api/settings/mfa/recovery-codes", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ password }),
+		body: JSON.stringify(input),
 	});
 	const data = (await res.json()) as MfaRecoveryCodesResponse;
 	if (!res.ok || !data.recoveryCodes) throw new Error(errorMessage(data, "Could not generate new codes"));

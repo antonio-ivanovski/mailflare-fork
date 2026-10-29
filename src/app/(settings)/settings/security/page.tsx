@@ -1,5 +1,6 @@
 import { getServerTranslator } from "@/lib/i18n/server";
-import { ChangePasswordForm } from "@/components/settings/change-password-form";
+import { PasswordSettings } from "@/components/settings/password-settings";
+import { PasskeySettings } from "@/components/settings/passkey-settings";
 import { MfaSettings } from "@/components/settings/mfa-settings";
 import { DeviceSettings } from "@/components/settings/device-settings";
 
@@ -16,7 +17,14 @@ export default async function SecuritySettingsPage() {
 					<h2 className="text-lg font-semibold text-neutral-900">{t("settingsPage.security.changePassword")}</h2>
 					<p className="mt-1 text-sm text-neutral-500">{t("settingsPage.security.changePasswordDescription")}</p>
 				</div>
-				<ChangePasswordForm />
+				<PasswordSettings />
+			</div>
+			<div className="space-y-4 rounded-3xl bg-white p-6">
+				<div>
+					<h2 className="text-lg font-semibold text-neutral-900">{t("passkey.settingsTitle")}</h2>
+					<p className="mt-1 text-sm text-neutral-500">{t("passkey.settingsDescription")}</p>
+				</div>
+				<PasskeySettings />
 			</div>
 			<div className="space-y-4 rounded-3xl bg-white p-6">
 				<div>

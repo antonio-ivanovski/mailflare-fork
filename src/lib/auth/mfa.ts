@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { getDb } from "@/db";
 import { mfaRecoveryCodes, users } from "@/db/schema";
@@ -42,16 +42,31 @@ export async function confirmMfaEnrollment(
 	if (!(await verifyTotp(user.totpSecret, code))) return { ok: false, error: "That code did not match. Check the time on your device and try again." };
 
 	const db = getDb(env);
-	await db.update(users).set({ totpEnabled: true, totpConfirmedAt: new Date() }).where(eq(users.id, user.id));
+	await db.update(users).set({ totpEnabled: true, totpConfirmedAt: new Date(), requireSecondFactor: true }).where(eq(users.id, user.id));
 	const recoveryCodes = await issueRecoveryCodes(env, user.id);
 	// Other sessions predate the second factor; make them sign in again with it.
 	await deleteUserSessions(env, user.id, currentSessionToken);
 	return { ok: true, recoveryCodes };
 }
 
+/**
+ * Turning TOTP off keeps the second-factor requirement only when a passkey
+ * remains as the alternative. Recovery codes alone are a fallback, not a
+ * primary factor, so they do not keep the requirement on.
+ */
 export async function disableMfa(env: CloudflareEnv, userId: string): Promise<void> {
 	const db = getDb(env);
-	await db.update(users).set({ totpSecret: null, totpEnabled: false, totpConfirmedAt: null }).where(eq(users.id, userId));
+	// The requirement follows the remaining passkeys in the same statement, so a
+	// concurrent passkey deletion cannot leave a required-but-missing factor.
+	await db
+		.update(users)
+		.set({
+			totpSecret: null,
+			totpEnabled: false,
+			totpConfirmedAt: null,
+			requireSecondFactor: sql`case when ${users.passkeyCount} > 0 then true else false end`,
+		})
+		.where(eq(users.id, userId));
 	await db.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));
 }
 
@@ -61,8 +76,9 @@ export async function verifySecondFactor(
 	user: { id: string; totpSecret: string | null; totpEnabled: boolean },
 	code: string,
 ): Promise<"totp" | "recovery" | null> {
-	if (!user.totpEnabled || !user.totpSecret) return null;
-	if (await verifyTotp(user.totpSecret, code)) return "totp";
+	if (user.totpEnabled && user.totpSecret && (await verifyTotp(user.totpSecret, code))) return "totp";
+	// Recovery codes also cover accounts whose only second factor is a passkey,
+	// so a lost authenticator does not strand a password login.
 	if (await consumeRecoveryCode(env, user.id, code)) return "recovery";
 	return null;
 }

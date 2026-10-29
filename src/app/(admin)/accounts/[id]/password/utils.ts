@@ -2,13 +2,13 @@ import { defaultTranslator } from "@/lib/i18n/utils";
 import { saveManagedAccount } from "../utils";
 import type { PasswordSaveOptions } from "./types";
 
-export async function saveAccountPassword({ event, account, password, setPassword, setSaving, setMessage, t = defaultTranslator }: PasswordSaveOptions) {
-	event.preventDefault();
+export async function saveAccountPassword({ event, account, password, stepUpToken, setPassword, setSaving, setMessage, t = defaultTranslator }: PasswordSaveOptions) {
+	event?.preventDefault();
 	if (!account) return;
 	setSaving(true);
 	setMessage(null);
 	try {
-		await saveManagedAccount({ ...account, newPassword: password });
+		await saveManagedAccount({ ...account, newPassword: password }, stepUpToken);
 		setPassword("");
 		setMessage(t("account.password.resetDone"));
 	} catch (error) {

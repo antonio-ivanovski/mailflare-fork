@@ -250,6 +250,31 @@
       ]
     },
     {
+      "name": "0003_passkeys.sql",
+      "statements": [
+        "ALTER TABLE `users` ADD `require_second_factor` boolean DEFAULT false NOT NULL;",
+        "ALTER TABLE `users` ADD `passkey_count` bigint DEFAULT 0 NOT NULL;",
+        "UPDATE `users` SET `require_second_factor` = `totp_enabled`;",
+        "CREATE TABLE `passkey_credentials` (\n\t`id` varchar(191) NOT NULL,\n\t`user_id` varchar(191) NOT NULL,\n\t`credential_id` longtext NOT NULL,\n\t`credential_hash` varchar(191) NOT NULL,\n\t`public_key` longtext NOT NULL,\n\t`counter` bigint DEFAULT 0 NOT NULL,\n\t`transports` longtext,\n\t`device_type` longtext NOT NULL,\n\t`backed_up` boolean DEFAULT false NOT NULL,\n\t`name` longtext NOT NULL,\n\t`last_used_at` bigint,\n\t`created_at` bigint NOT NULL,\n\tCONSTRAINT `passkey_credentials_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `passkey_credentials_credential_hash_unique` UNIQUE(`credential_hash`)\n);",
+        "CREATE INDEX `passkey_credentials_user_idx` ON `passkey_credentials` (`user_id`);",
+        "CREATE TABLE `webauthn_challenges` (\n\t`id` varchar(191) NOT NULL,\n\t`ceremony_hash` varchar(191) NOT NULL,\n\t`challenge` longtext NOT NULL,\n\t`purpose` varchar(64) NOT NULL,\n\t`user_id` varchar(191),\n\t`binding_hash` longtext NOT NULL,\n\t`expires_at` bigint NOT NULL,\n\t`used_at` bigint,\n\t`created_at` bigint NOT NULL,\n\tCONSTRAINT `webauthn_challenges_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `webauthn_challenges_ceremony_hash_unique` UNIQUE(`ceremony_hash`)\n);",
+        "CREATE INDEX `webauthn_challenges_user_idx` ON `webauthn_challenges` (`user_id`);",
+        "CREATE INDEX `webauthn_challenges_expires_idx` ON `webauthn_challenges` (`expires_at`);",
+        "CREATE TABLE `passkey_enrollment_grants` (\n\t`id` varchar(191) NOT NULL,\n\t`user_id` varchar(191) NOT NULL,\n\t`token_hash` varchar(191) NOT NULL,\n\t`kind` varchar(64) NOT NULL,\n\t`created_by_user_id` varchar(191),\n\t`expires_at` bigint NOT NULL,\n\t`used_at` bigint,\n\t`created_at` bigint NOT NULL,\n\tCONSTRAINT `passkey_enrollment_grants_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `passkey_enrollment_grants_token_hash_unique` UNIQUE(`token_hash`)\n);",
+        "CREATE INDEX `passkey_enrollment_grants_user_idx` ON `passkey_enrollment_grants` (`user_id`);",
+        "CREATE TABLE `auth_step_ups` (\n\t`id` varchar(191) NOT NULL,\n\t`user_id` varchar(191) NOT NULL,\n\t`session_hash` varchar(191) NOT NULL,\n\t`token_hash` varchar(191) NOT NULL,\n\t`purpose` varchar(64) NOT NULL,\n\t`expires_at` bigint NOT NULL,\n\t`used_at` bigint,\n\t`created_at` bigint NOT NULL,\n\tCONSTRAINT `auth_step_ups_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `auth_step_ups_token_hash_unique` UNIQUE(`token_hash`)\n);",
+        "CREATE INDEX `auth_step_ups_user_idx` ON `auth_step_ups` (`user_id`);",
+        "ALTER TABLE `passkey_credentials` ADD CONSTRAINT `passkey_credentials_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;",
+        "ALTER TABLE `webauthn_challenges` ADD CONSTRAINT `webauthn_challenges_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;",
+        "ALTER TABLE `passkey_enrollment_grants` ADD CONSTRAINT `passkey_enrollment_grants_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;",
+        "ALTER TABLE `passkey_enrollment_grants` ADD CONSTRAINT `passkey_enrollment_grants_created_by_user_id_users_id_fk` FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;",
+        "ALTER TABLE `auth_step_ups` ADD CONSTRAINT `auth_step_ups_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;",
+        "CREATE TRIGGER `passkey_credentials_count_insert` AFTER INSERT ON `passkey_credentials` FOR EACH ROW\nBEGIN\n\tUPDATE `users` SET `passkey_count` = `passkey_count` + 1 WHERE `id` = NEW.`user_id`;\nEND;",
+        "CREATE TRIGGER `passkey_credentials_count_delete` AFTER DELETE ON `passkey_credentials` FOR EACH ROW\nBEGIN\n\tUPDATE `users` SET `passkey_count` = `passkey_count` - 1 WHERE `id` = OLD.`user_id`;\n\tIF (SELECT `passkey_count` FROM `users` WHERE `id` = OLD.`user_id`) = 0\n\t\tAND (SELECT `deleted_at` FROM `users` WHERE `id` = OLD.`user_id`) IS NULL\n\t\tAND (\n\t\t\t(SELECT `password_hash` FROM `users` WHERE `id` = OLD.`user_id`) = '!passkey-only'\n\t\t\tOR (\n\t\t\t\t(SELECT `require_second_factor` FROM `users` WHERE `id` = OLD.`user_id`) = 1\n\t\t\t\tAND (SELECT `totp_enabled` FROM `users` WHERE `id` = OLD.`user_id`) = 0\n\t\t\t)\n\t\t) THEN\n\t\tSIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last-auth-method';\n\tEND IF;\nEND;",
+        "CREATE TRIGGER `users_last_password_update` BEFORE UPDATE ON `users` FOR EACH ROW\nBEGIN\n\tIF NEW.`password_hash` <> OLD.`password_hash`\n\t\tAND NEW.`password_hash` = '!passkey-only'\n\t\tAND NEW.`passkey_count` = 0 THEN\n\t\tSIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last-auth-method';\n\tEND IF;\nEND;"
+      ]
+    },
+    {
       "name": "0003_remote_content_ask.sql",
       "statements": [
         "UPDATE `users` SET `remote_content_mode` = 'ask' WHERE `remote_content_mode` = 'allow';"
