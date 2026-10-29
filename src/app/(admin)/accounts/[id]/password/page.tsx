@@ -12,6 +12,7 @@ import { StepUpDialog } from "@/components/settings/step-up-dialog";
 import { loadSecurityStatus } from "@/components/settings/passkey-settings-utils";
 import type { SecurityStatus } from "@/components/settings/passkey-settings-types";
 import { authFetch } from "@/lib/auth/client";
+import { requestError } from "@/lib/http/client-error";
 import type { ManagedAccount } from "../types";
 import { fetchManagedAccount } from "../utils";
 import { saveAccountPassword } from "./utils";
@@ -43,8 +44,8 @@ export default function AccountPasswordPage() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ stepUpToken }),
 		});
-		const data = (await res.json()) as { link?: string; error?: string };
-		if (!res.ok || !data.link) throw new Error(data.error ?? t("account.recovery.failed"));
+		const data = (await res.json()) as { link?: string; error?: string; code?: string };
+		if (!res.ok || !data.link) throw requestError(data, t("account.recovery.failed"));
 		setRecoveryLink(data.link);
 	}
 
@@ -129,6 +130,8 @@ export default function AccountPasswordPage() {
 				hasPasskey={(adminSecurity?.passkeys.length ?? 0) > 0}
 				requireSecondFactor={adminSecurity?.requireSecondFactor ?? false}
 				totpEnabled={adminSecurity?.totpEnabled ?? false}
+				action="admin.recovery_link"
+				targetUserId={id}
 				onOpenChange={(open) => !open && setPendingRecovery(false)}
 				onAuthorized={async (token) => {
 					await createRecoveryLink(token);
@@ -142,6 +145,8 @@ export default function AccountPasswordPage() {
 				hasPasskey={(adminSecurity?.passkeys.length ?? 0) > 0}
 				requireSecondFactor={adminSecurity?.requireSecondFactor ?? false}
 				totpEnabled={adminSecurity?.totpEnabled ?? false}
+				action="admin.password_reset"
+				targetUserId={id}
 				onOpenChange={(open) => !open && setPendingReset(false)}
 				onAuthorized={async (token) => {
 					await saveAccountPassword({ account, password, stepUpToken: token, setPassword, setSaving, setMessage, t });

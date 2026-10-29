@@ -1,83 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Copy, KeyRound, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
+import { useState } from "react";
+import { KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import type { SecurityStatus } from "./passkey-settings-types";
-import {
-	addPasskey,
-	generateRecoveryCodes,
-	loadSecurityStatus,
-	removePasskey,
-	setSecondFactorRequirement,
-} from "./passkey-settings-utils";
+import type { PasskeySummary } from "./passkey-settings-types";
+import { addPasskey, passkeyProvider, removePasskey, renamePasskey } from "./passkey-settings-utils";
+import { refreshSecurityStatus, useSecurityStatus } from "./security-status-store";
 import { StepUpDialog } from "./step-up-dialog";
+import { authErrorText } from "@/lib/auth/error-messages";
+import { ClientRequestError } from "@/lib/http/client-error";
 
-type PendingAction =
-	| { type: "add"; name: string }
-	| { type: "remove"; id: string; name: string }
-	| { type: "toggle"; enabled: boolean }
-	| { type: "codes" };
+type PendingAction = { type: "add"; name: string } | { type: "remove"; id: string; name: string };
 
 export function PasskeySettings() {
 	const { t } = useLanguage();
-	const [status, setStatus] = useState<SecurityStatus | null>(null);
-	const [loadError, setLoadError] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	const { status, error: loadFailed } = useSecurityStatus();
 	const [addOpen, setAddOpen] = useState(false);
-	const [name, setName] = useState("Passkey");
+	const [name, setName] = useState("");
 	const [pending, setPending] = useState<PendingAction | null>(null);
 	const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
-	const [codes, setCodes] = useState<string[] | null>(null);
-	const [copied, setCopied] = useState(false);
-	const [busy, setBusy] = useState(false);
+	const [rename, setRename] = useState<{ id: string; name: string } | null>(null);
+	const [renameError, setRenameError] = useState<string | null>(null);
+	const [renaming, setRenaming] = useState(false);
 
-	useEffect(() => {
-		const load = () => {
-			loadSecurityStatus()
-				.then(setStatus)
-				.catch((err) => setLoadError(err instanceof Error ? err.message : t("passkey.loadFailed")));
-		};
-		load();
-		window.addEventListener("mailflare:security-changed", load);
-		return () => window.removeEventListener("mailflare:security-changed", load);
-	}, [t]);
-
-	async function refresh() {
-		setStatus(await loadSecurityStatus());
+	function displayName(passkey: PasskeySummary) {
+		if (passkey.name.trim()) return passkey.name;
+		return passkeyProvider(passkey.aaguid) ?? t("passkey.defaultName", { date: new Date(passkey.createdAt).toLocaleDateString() });
 	}
 
 	async function authorized(token: string) {
 		if (!pending) return;
-		setBusy(true);
-		setError(null);
+		if (pending.type === "add") {
+			await addPasskey(pending.name, token);
+			setName("");
+		} else {
+			await removePasskey(pending.id, token);
+		}
+		await refreshSecurityStatus(true);
+		setPending(null);
+	}
+
+	async function submitRename(event: React.FormEvent) {
+		event.preventDefault();
+		if (!rename) return;
+		setRenaming(true);
+		setRenameError(null);
 		try {
-			if (pending.type === "add") {
-				await addPasskey(pending.name, token);
-				setName("Passkey");
-			} else if (pending.type === "remove") {
-				await removePasskey(pending.id, token);
-			} else if (pending.type === "toggle") {
-				await setSecondFactorRequirement(pending.enabled, token);
-			} else {
-				setCodes(await generateRecoveryCodes(token));
-				setCopied(false);
-			}
-			await refresh();
+			await renamePasskey(rename.id, rename.name);
+			setRename(null);
+			await refreshSecurityStatus(true);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("passkey.actionFailed"));
+			setRenameError(authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.renameFailed"));
 		} finally {
-			setBusy(false);
-			setPending(null);
+			setRenaming(false);
 		}
 	}
 
-	if (!status) return <p className="text-sm text-neutral-500">{loadError ?? t("mfa.loading")}</p>;
+	if (!status) return <p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("passkey.loadFailed") : t("mfa.loading")}</p>;
+
+	const otherSignInMethod = status.passwordSet && (!status.requireSecondFactor || status.totpEnabled);
+	const canRemove = status.passkeys.length > 1 || otherSignInMethod;
 
 	return (
 		<div className="space-y-5">
@@ -90,14 +76,12 @@ export function PasskeySettings() {
 					)}
 					<div>
 						<p className="text-sm font-medium text-neutral-900">
-							{status.passkeys.length === 0
-								? t("passkey.none")
-								: t("passkey.count", { count: status.passkeys.length })}
+							{status.passkeys.length === 0 ? t("passkey.none") : t("passkey.count", { count: status.passkeys.length })}
 						</p>
 						<p className="mt-1 text-sm text-neutral-500">{t("passkey.description")}</p>
 					</div>
 				</div>
-				<Button type="button" variant="outline" onClick={() => setAddOpen(true)} disabled={busy}>
+				<Button type="button" variant="outline" onClick={() => setAddOpen(true)}>
 					<Plus className="h-4 w-4" />
 					{t("passkey.add")}
 				</Button>
@@ -110,55 +94,48 @@ export function PasskeySettings() {
 							<div className="flex min-w-0 items-start gap-3">
 								<KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
 								<div className="min-w-0">
-									<p className="truncate text-sm font-medium text-neutral-900">{passkey.name}</p>
+									<p className="truncate text-sm font-medium text-neutral-900" title={displayName(passkey)}>{displayName(passkey)}</p>
 									<p className="mt-1 text-xs text-neutral-500">
 										{passkey.lastUsedAt
 											? t("passkey.lastUsed", { date: new Date(passkey.lastUsedAt).toLocaleString() })
 											: t("passkey.neverUsed")}
+										{" · "}
+										{passkey.backedUp ? t("passkey.backedUp") : t("passkey.deviceOnly")}
 									</p>
+									<p className="mt-0.5 text-xs text-neutral-400">{t("passkey.createdAt", { date: new Date(passkey.createdAt).toLocaleDateString() })}</p>
 								</div>
 							</div>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								disabled={busy}
-								onClick={() => setConfirmRemove({ id: passkey.id, name: passkey.name })}
-								aria-label={t("passkey.remove")}
-							>
-								<Trash2 className="h-4 w-4" />
-							</Button>
+							<div className="flex shrink-0 items-center gap-1">
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setRenameError(null);
+										setRename({ id: passkey.id, name: displayName(passkey) });
+									}}
+									aria-label={t("passkey.renameLabel", { name: displayName(passkey) })}
+								>
+									<Pencil className="h-4 w-4" />
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									disabled={!canRemove}
+									title={canRemove ? undefined : t("passkey.lastMethodHint")}
+									onClick={() => setConfirmRemove({ id: passkey.id, name: displayName(passkey) })}
+									aria-label={t("passkey.removeLabel", { name: displayName(passkey) })}
+								>
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</div>
 						</li>
 					))}
 				</ul>
 			)}
 
-			<div className="flex items-start justify-between gap-4 rounded-2xl border border-neutral-100 p-4">
-				<div>
-					<Label htmlFor="require-second-factor">{t("passkey.requireSecondFactor")}</Label>
-					<p className="mt-1 text-xs leading-5 text-neutral-500">{t("passkey.requireSecondFactorHint")}</p>
-				</div>
-				<Switch
-					id="require-second-factor"
-					checked={status.requireSecondFactor}
-					disabled={busy || (status.passkeys.length === 0 && !status.totpEnabled)}
-					onCheckedChange={(enabled) => setPending({ type: "toggle", enabled })}
-				/>
-			</div>
-
-			<div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-100 p-4">
-				<div>
-					<p className="text-sm font-medium text-neutral-900">{t("passkey.recoveryCodes")}</p>
-					<p className="mt-1 text-xs leading-5 text-neutral-500">
-						{t("passkey.recoveryCodesLeft", { count: status.recoveryCodesLeft })}
-					</p>
-				</div>
-				<Button type="button" variant="outline" onClick={() => setPending({ type: "codes" })} disabled={busy || (status.passkeys.length === 0 && !status.totpEnabled)}>
-					{t("passkey.newRecoveryCodes")}
-				</Button>
-			</div>
-
-			{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+			<p className="rounded-2xl border border-neutral-100 p-4 text-xs leading-5 text-neutral-500">{t("passkey.lostAllHint")}</p>
 
 			<Dialog open={addOpen} onOpenChange={setAddOpen}>
 				<DialogContent className="sm:max-w-[440px]">
@@ -167,7 +144,7 @@ export function PasskeySettings() {
 						onSubmit={(event) => {
 							event.preventDefault();
 							setAddOpen(false);
-							setPending({ type: "add", name });
+							setPending({ type: "add", name: name.trim() });
 						}}
 					>
 						<DialogHeader>
@@ -175,8 +152,17 @@ export function PasskeySettings() {
 							<DialogDescription>{t("passkey.addDescription")}</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-2">
-							<Label htmlFor="new-passkey-name">{t("passkey.name")}</Label>
-							<Input id="new-passkey-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} required autoFocus />
+							<Label htmlFor="new-passkey-name">{t("passkey.nameOptional")}</Label>
+							<Input
+								id="new-passkey-name"
+								value={name}
+								onChange={(event) => setName(event.target.value)}
+								maxLength={100}
+								autoComplete="off"
+								placeholder={t("passkey.namePlaceholder")}
+								autoFocus
+							/>
+							<p className="text-xs leading-5 text-neutral-500">{t("passkey.nameHint")}</p>
 						</div>
 						<Button type="submit">{t("common.continue")}</Button>
 					</form>
@@ -203,42 +189,40 @@ export function PasskeySettings() {
 				</DialogContent>
 			</Dialog>
 
+			<Dialog open={!!rename} onOpenChange={(open) => !open && setRename(null)}>
+				<DialogContent className="sm:max-w-[440px]">
+					<form onSubmit={submitRename} className="space-y-4">
+						<DialogHeader>
+							<DialogTitle>{t("passkey.renameTitle")}</DialogTitle>
+							<DialogDescription>{t("passkey.renameDescription")}</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-2">
+							<Label htmlFor="rename-passkey">{t("passkey.name")}</Label>
+							<Input
+								id="rename-passkey"
+								value={rename?.name ?? ""}
+								onChange={(event) => rename && setRename({ ...rename, name: event.target.value })}
+								maxLength={100}
+								required
+								autoFocus
+							/>
+						</div>
+						{renameError && <p role="alert" className="text-sm text-red-600">{renameError}</p>}
+						<Button type="submit" disabled={renaming}>{renaming ? t("common.pleaseWait") : t("common.save")}</Button>
+					</form>
+				</DialogContent>
+			</Dialog>
+
 			<StepUpDialog
 				open={!!pending}
 				hasPassword={status.passwordSet}
 				hasPasskey={status.passkeys.length > 0}
 				requireSecondFactor={status.requireSecondFactor}
 				totpEnabled={status.totpEnabled}
+				action={pending?.type === "add" ? "passkey.add" : "passkey.remove"}
 				onOpenChange={(open) => !open && setPending(null)}
 				onAuthorized={authorized}
 			/>
-
-			<Dialog open={!!codes} onOpenChange={(open) => !open && setCodes(null)}>
-				<DialogContent className="sm:max-w-[480px]">
-					<DialogHeader>
-						<DialogTitle>{t("passkey.codesTitle")}</DialogTitle>
-						<DialogDescription>{t("passkey.codesDescription")}</DialogDescription>
-					</DialogHeader>
-					<ul className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 p-4 font-mono text-sm text-neutral-800">
-						{(codes ?? []).map((code) => <li key={code}>{code}</li>)}
-					</ul>
-					<div className="flex items-center gap-3">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => {
-								if (!codes) return;
-								void navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true));
-							}}
-						>
-							<Copy className="h-4 w-4" />
-							{copied ? t("common.copied") : t("mfa.copyCodes")}
-						</Button>
-						<Button type="button" onClick={() => setCodes(null)}>{t("common.done")}</Button>
-					</div>
-					<p className="text-xs leading-5 text-neutral-500">{t("passkey.codesHint")}</p>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }

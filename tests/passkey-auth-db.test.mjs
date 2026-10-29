@@ -79,6 +79,29 @@ test("purging a deleted account can remove its last passkey", () => {
 	assert.equal(db.prepare("SELECT COUNT(*) AS count FROM passkey_credentials").get().count, 0);
 });
 
+test("requiring a second step needs an enrolled factor", () => {
+	const db = database();
+	addUser(db, { id: "u1", passwordHash: "$2b$12$hash" });
+	assert.throws(
+		() => db.prepare("UPDATE users SET require_second_factor = 1 WHERE id = 'u1'").run(),
+		/second-factor-unavailable/,
+	);
+	addPasskey(db, { id: "p1", userId: "u1" });
+	db.prepare("UPDATE users SET require_second_factor = 1 WHERE id = 'u1'").run();
+	assert.equal(db.prepare("SELECT require_second_factor FROM users WHERE id = 'u1'").get().require_second_factor, 1);
+});
+
+test("PostgreSQL and MySQL ship the passkey triggers and bound-grant columns", () => {
+	for (const directory of ["drizzle/migrations-pg", "drizzle/migrations-mysql"]) {
+		const sql = ["0003_passkeys.sql", "0004_bound_step_up_grants.sql"]
+			.map((name) => readFileSync(new URL(`../${directory}/${name}`, import.meta.url), "utf8"))
+			.join("\n");
+		for (const needle of ["passkey_count", "last-auth-method", "second-factor-unavailable", "security_version", "target_user_id"]) {
+			assert.ok(sql.includes(needle), `${directory} lacks ${needle}`);
+		}
+	}
+});
+
 test("a normal password-only fallback allows the last passkey to go", () => {
 	const db = database();
 	addUser(db, { id: "u1", passwordHash: "$2b$12$hash" });

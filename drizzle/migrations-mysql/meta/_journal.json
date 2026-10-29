@@ -36,6 +36,13 @@
       "when": 1793272415912,
       "tag": "0003_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1793280375889,
+      "tag": "0004_bound_step_up_grants",
+      "breakpoints": true
     }
   ]
 }

@@ -128,23 +128,52 @@ export const passkeyMfaVerifySchema = passkeyCeremonySchema.extend({
 	challengeToken: z.string().min(8).max(200),
 });
 
+export const stepUpActionSchema = z.enum([
+	"passkey.add",
+	"passkey.remove",
+	"password.set",
+	"password.remove",
+	"mfa.enroll",
+	"mfa.disable",
+	"mfa.codes",
+	"second_factor.toggle",
+	"admin.password_reset",
+	"admin.recovery_link",
+]);
+
 export const passkeyRegistrationSchema = passkeyCeremonySchema.extend({
-	name: z.string().trim().min(1).max(100),
+	name: z.string().trim().max(100).optional().default(""),
 	stepUpToken: z.string().min(8).max(200).optional(),
 });
 
 export const passkeySetupSchema = passkeyCeremonySchema.extend({
 	token: z.string().min(8).max(200),
-	name: z.string().trim().min(1).max(100),
+	name: z.string().trim().max(100).optional().default(""),
 });
 
 export const passkeySetupOptionsSchema = z.object({
 	token: z.string().min(8).max(200),
 });
 
+export const passkeyAddOptionsSchema = z.object({
+	stepUpToken: z.string().min(8).max(200),
+});
+
 export const passkeyStepUpSchema = z.object({
 	password: z.string().min(1).max(128),
 	code: z.string().trim().min(6).max(32).optional(),
+	action: stepUpActionSchema,
+	targetUserId: z.string().min(1).max(191).optional(),
+});
+
+export const passkeyStepUpOptionsSchema = z.object({
+	action: stepUpActionSchema,
+	targetUserId: z.string().min(1).max(191).optional(),
+});
+
+export const passkeyStepUpVerifySchema = passkeyCeremonySchema.extend({
+	action: stepUpActionSchema,
+	targetUserId: z.string().min(1).max(191).optional(),
 });
 
 export const stepUpTokenSchema = z.object({
@@ -153,12 +182,6 @@ export const stepUpTokenSchema = z.object({
 
 export const passkeyRenameSchema = z.object({
 	name: z.string().trim().min(1).max(100),
-});
-
-export const recoveryStartSchema = z.object({
-	email: z.string().trim().email(),
-	code: z.string().trim().min(6).max(32),
-	turnstileToken: z.string().nullish(),
 });
 
 export const passwordSetSchema = z.object({
@@ -187,7 +210,7 @@ export const mfaDisableSchema = z
 	.object({
 		password: z.string().min(1).optional(),
 		stepUpToken: z.string().min(8).max(200).optional(),
-		code: z.string().trim().min(6).max(32),
+		code: z.string().trim().min(6).max(32).optional(),
 	})
 	.refine((value) => value.password || value.stepUpToken, { message: "Verify your identity first" });
 

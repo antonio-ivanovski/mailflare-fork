@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authErrorText } from "@/lib/auth/error-messages";
+import { isPasskeyCancellation } from "@/lib/auth/webauthn/browser-errors";
+import { ClientRequestError } from "@/lib/http/client-error";
 import { stepUpWithPasskey, stepUpWithPassword } from "./passkey-settings-utils";
 
 /**
- * One reusable "prove it is still you" dialog. It respects the account's
- * second-factor policy: passkey when available, otherwise a password plus a
- * code when password sign-ins require one.
+ * One reusable "prove it is still you" dialog. Passkeys are the primary
+ * choice when available; the password path remains available where the
+ * account policy allows it.
  */
 export function StepUpDialog({
 	open,
@@ -20,6 +23,8 @@ export function StepUpDialog({
 	hasPasskey = false,
 	requireSecondFactor = false,
 	totpEnabled = false,
+	action,
+	targetUserId,
 	onOpenChange,
 	onAuthorized,
 }: {
@@ -28,23 +33,29 @@ export function StepUpDialog({
 	hasPasskey?: boolean;
 	requireSecondFactor?: boolean;
 	totpEnabled?: boolean;
+	action: string;
+	targetUserId?: string;
 	onOpenChange: (open: boolean) => void;
 	onAuthorized: (stepUpToken: string) => void | Promise<void>;
 }) {
 	const { t } = useLanguage();
 	const [password, setPassword] = useState("");
 	const [code, setCode] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
 	const passwordPathAllowed = hasPassword && (!requireSecondFactor || totpEnabled);
-	const needsCode = hasPassword && requireSecondFactor && totpEnabled;
+	const needsCode = hasPassword && totpEnabled && (requireSecondFactor || action === "mfa.disable");
+	const showPasswordForm = !hasPasskey || showPassword || !passwordPathAllowed;
+	const canUsePasskey = hasPasskey;
 
 	function close(next: boolean) {
 		onOpenChange(next);
 		if (!next) {
 			setPassword("");
 			setCode("");
+			setShowPassword(false);
 			setError(null);
 		}
 	}
@@ -54,10 +65,10 @@ export function StepUpDialog({
 		setBusy(true);
 		setError(null);
 		try {
-			await onAuthorized(await stepUpWithPassword(password, needsCode ? code : undefined));
+			await onAuthorized(await stepUpWithPassword(password, needsCode ? code : undefined, action, targetUserId));
 			close(false);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("passkey.verifyFailed"));
+			setError(authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.verifyFailed"));
 		} finally {
 			setBusy(false);
 		}
@@ -67,12 +78,10 @@ export function StepUpDialog({
 		setBusy(true);
 		setError(null);
 		try {
-			await onAuthorized(await stepUpWithPasskey());
+			await onAuthorized(await stepUpWithPasskey(action, targetUserId));
 			close(false);
 		} catch (err) {
-			if (!(err instanceof DOMException && err.name === "NotAllowedError")) {
-				setError(err instanceof Error ? err.message : t("passkey.verifyFailed"));
-			}
+			setError(isPasskeyCancellation(err) ? t("authError.passkeyCancelled") : authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "passkey.verifyFailed"));
 		} finally {
 			setBusy(false);
 		}
@@ -85,7 +94,22 @@ export function StepUpDialog({
 					<DialogTitle>{t("passkey.verifyTitle")}</DialogTitle>
 					<DialogDescription>{t("passkey.verifyDescription")}</DialogDescription>
 				</DialogHeader>
-				{passwordPathAllowed ? (
+				{canUsePasskey && (
+					<div className="space-y-3">
+						<Button type="button" className="w-full" onClick={() => void submitPasskey()} disabled={busy}>
+							<KeyRound className="h-4 w-4" />
+							{busy ? t("passkey.waiting") : t("passkey.verifyWithPasskey")}
+						</Button>
+						<p className="flex items-start gap-2 text-xs leading-5 text-neutral-500">
+							<ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+							{t("passkey.verifyHint")}
+						</p>
+						{passwordPathAllowed && (
+							<p className="text-center text-xs uppercase tracking-wide text-neutral-400">{t("passkey.or")}</p>
+						)}
+					</div>
+				)}
+				{showPasswordForm && passwordPathAllowed && (
 					<form onSubmit={submitPassword} className="space-y-4">
 						<div className="space-y-2">
 							<Label htmlFor="step-up-password">{t("common.password")}</Label>
@@ -95,53 +119,41 @@ export function StepUpDialog({
 								autoComplete="current-password"
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
-								autoFocus
+								autoFocus={!canUsePasskey}
 								required
 							/>
 						</div>
 						{needsCode && (
 							<div className="space-y-2">
-								<Label htmlFor="step-up-code">{t("mfa.sixDigitCode")}</Label>
+								<Label htmlFor="step-up-code">{t("mfa.code")}</Label>
 								<Input
 									id="step-up-code"
-									inputMode="numeric"
+									inputMode="text"
 									autoComplete="one-time-code"
+									autoCapitalize="none"
+									autoCorrect="off"
+									spellCheck={false}
 									value={code}
 									onChange={(event) => setCode(event.target.value)}
-									placeholder="123 456"
+									placeholder={t("auth.codePlaceholder")}
 									required
 								/>
 							</div>
 						)}
-						{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-						<Button type="submit" disabled={busy}>
+						<Button type="submit" variant={canUsePasskey ? "outline" : "default"} disabled={busy}>
 							{busy ? t("common.pleaseWait") : t("common.continue")}
 						</Button>
-						{hasPasskey && (
-							<>
-								<p className="text-center text-xs uppercase tracking-wide text-neutral-400">{t("passkey.or")}</p>
-								<Button type="button" variant="outline" className="w-full" onClick={() => void submitPasskey()} disabled={busy}>
-									<KeyRound className="h-4 w-4" />
-									{t("passkey.verifyWithPasskey")}
-								</Button>
-							</>
-						)}
 					</form>
-				) : hasPasskey ? (
-					<div className="space-y-4">
-						<Button type="button" onClick={() => void submitPasskey()} disabled={busy}>
-							<KeyRound className="h-4 w-4" />
-							{busy ? t("passkey.waiting") : t("passkey.verifyWithPasskey")}
-						</Button>
-						{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-						<p className="flex items-start gap-2 text-xs leading-5 text-neutral-500">
-							<ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-							{t("passkey.verifyHint")}
-						</p>
-					</div>
-				) : (
+				)}
+				{!canUsePasskey && !passwordPathAllowed && (
 					<p role="alert" className="text-sm text-red-600">{t("passkey.verifyUnavailable")}</p>
 				)}
+				{canUsePasskey && passwordPathAllowed && !showPassword && (
+					<button type="button" className="w-full text-center text-sm text-neutral-500 hover:text-neutral-800" onClick={() => setShowPassword(true)}>
+						{t("passkey.usePasswordInstead")}
+					</button>
+				)}
+				{error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 			</DialogContent>
 		</Dialog>
 	);

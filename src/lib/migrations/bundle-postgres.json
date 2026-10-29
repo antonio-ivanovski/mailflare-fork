@@ -303,6 +303,17 @@
       "statements": [
         "UPDATE \"users\" SET \"remote_content_mode\" = 'ask' WHERE \"remote_content_mode\" = 'allow';"
       ]
+    },
+    {
+      "name": "0004_bound_step_up_grants.sql",
+      "statements": [
+        "ALTER TABLE \"users\" ADD COLUMN \"security_version\" bigint DEFAULT 0 NOT NULL;",
+        "ALTER TABLE \"auth_step_ups\" ADD COLUMN \"target_user_id\" text;",
+        "ALTER TABLE \"auth_step_ups\" ADD COLUMN \"security_version\" bigint DEFAULT 0 NOT NULL;",
+        "ALTER TABLE \"passkey_credentials\" ADD COLUMN \"aaguid\" text;",
+        "CREATE FUNCTION mailflare_require_second_factor_update() RETURNS trigger AS $$\nBEGIN\n\tIF NEW.require_second_factor AND NEW.passkey_count = 0 AND NOT NEW.totp_enabled AND NEW.deleted_at IS NULL THEN\n\t\tRAISE EXCEPTION 'second-factor-unavailable';\n\tEND IF;\n\tRETURN NEW;\nEND;\n$$ LANGUAGE plpgsql;",
+        "CREATE TRIGGER users_require_second_factor_update BEFORE UPDATE OF require_second_factor ON users\nFOR EACH ROW EXECUTE FUNCTION mailflare_require_second_factor_update();"
+      ]
     }
   ]
 }

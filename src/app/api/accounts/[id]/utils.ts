@@ -1,7 +1,15 @@
 import { and, eq, ne } from "drizzle-orm";
 import type { getDb } from "@/db";
 import { mailboxes, users } from "@/db/schema";
-import { hashPassword } from "@/lib/auth/password";
+import { hasPasswordHash, hashPassword } from "@/lib/auth/password";
+import { bumpSecurityVersion } from "@/lib/auth/webauthn/grants";
+
+export class PasskeyOnlyPasswordError extends Error {
+	constructor() {
+		super("passkey-only-password");
+		this.name = "PasskeyOnlyPasswordError";
+	}
+}
 
 type Db = ReturnType<typeof getDb>;
 
@@ -24,6 +32,13 @@ export async function updateAccountCredentials(
 	id: string,
 	input: { email?: string; name: string; password: string | null; disabled?: boolean },
 ) {
+	if (input.password) {
+		const [target] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, id)).limit(1);
+		if (!target) throw new Error("account-not-found");
+		// Passwordless accounts must be recovered through a passkey enrolment
+		// link, never by silently adding a password that bypasses that policy.
+		if (!hasPasswordHash(target.passwordHash)) throw new PasskeyOnlyPasswordError();
+	}
 	await db
 		.update(users)
 		.set({
@@ -33,6 +48,7 @@ export async function updateAccountCredentials(
 			...(input.password ? { passwordHash: hashPassword(input.password) } : {}),
 		})
 		.where(eq(users.id, id));
+	if (input.password) await bumpSecurityVersion(db, id);
 
 	await db
 		.update(mailboxes)

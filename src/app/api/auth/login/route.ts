@@ -13,6 +13,7 @@ import { createLoginChallenge } from "@/lib/auth/login-challenge";
 import { completeLogin } from "@/lib/auth/login-response";
 import { countPasskeys } from "@/lib/auth/webauthn/credentials";
 import { countUnusedRecoveryCodes } from "@/lib/auth/recovery-codes";
+import { authError } from "@/lib/http/auth-error";
 
 export async function POST(request: Request) {
 	const env = getEnv();
@@ -21,20 +22,15 @@ export async function POST(request: Request) {
 		body = await readJsonBody(request, 16 * 1024);
 	} catch (error) {
 		const status = error instanceof RequestBodyTooLargeError ? 413 : 400;
-		return NextResponse.json({ error: "Invalid login request" }, { status });
+		return authError("invalid_request", status);
 	}
 	const parsed = loginSchema.safeParse(body);
-	if (!parsed.success) {
-		return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-	}
+	if (!parsed.success) return authError("invalid_request", 400);
 	if (!(await allowLoginAttempt(env, request))) {
-		return NextResponse.json(
-			{ error: "Too many login attempts. Try again shortly." },
-			{ status: 429, headers: { "Retry-After": "60" } },
-		);
+		return authError("rate_limited", 429, { "Retry-After": "60" });
 	}
 	if (!(await verifyTurnstileToken(env, request, (body as Record<string, unknown>).turnstileToken))) {
-		return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 400 });
+		return authError("verification_failed", 400);
 	}
 
 	const db = getDb(env);
@@ -42,11 +38,9 @@ export async function POST(request: Request) {
 	// A passwordless account has no usable password; it still takes the same
 	// generic error so the response cannot be used to enumerate accounts.
 	if (!user || !verifyPassword(parsed.data.password, user.passwordHash)) {
-		return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+		return authError("invalid_credentials", 401);
 	}
-	if (user.disabled || user.deletedAt) {
-		return NextResponse.json({ error: "Account disabled" }, { status: 403 });
-	}
+	if (user.disabled || user.deletedAt) return authError("account_disabled", 403);
 
 	// The password is right but this account requires a second factor: hand
 	// back a short-lived challenge instead of a session.
@@ -55,10 +49,12 @@ export async function POST(request: Request) {
 			countPasskeys(env, user.id),
 			countUnusedRecoveryCodes(env, user.id),
 		]);
-		const methods = [...(passkeys > 0 ? ["passkey"] : []), ...(user.totpEnabled && user.totpSecret ? ["totp"] : []), ...(recoveryCodes > 0 ? ["recovery"] : [])];
-		if (methods.length === 0) {
-			return NextResponse.json({ error: "This account requires a second factor but has none configured. Contact an administrator." }, { status: 403 });
-		}
+		const methods = [
+			...(passkeys > 0 ? ["passkey"] : []),
+			...(user.totpEnabled && user.totpSecret ? ["totp"] : []),
+			...(user.totpEnabled && recoveryCodes > 0 ? ["recovery"] : []),
+		];
+		if (methods.length === 0) return authError("verification_required", 409);
 		const challengeToken = await createLoginChallenge(env, user.id);
 		const pending = NextResponse.json({ ok: true, mfaRequired: true, challengeToken, methods });
 		pending.headers.set("Cache-Control", "no-store");

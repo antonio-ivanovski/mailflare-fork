@@ -5,6 +5,7 @@ export type PasskeySummary = {
 	lastUsedAt: string | null;
 	backedUp: boolean;
 	deviceType: string;
+	aaguid: string | null;
 };
 
 export type SecurityStatus = {
@@ -19,22 +20,25 @@ export type SecurityStatus = {
 export type StepUpResponse = {
 	stepUpToken?: string;
 	error?: string;
+	code?: string;
 };
 
 export type PasskeyOptionsResponse = {
 	options?: unknown;
 	ceremonyToken?: string;
 	error?: string;
+	code?: string;
 };
 
 export type PasskeyAddResponse = {
 	ok?: boolean;
 	passkey?: { id: string; name: string; createdAt: string };
 	error?: string;
+	code?: string;
 };
 
 export type RemovePasswordResponse = {
 	ok?: boolean;
-	recoveryCodes?: string[];
 	error?: string;
+	code?: string;
 };

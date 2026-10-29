@@ -27,6 +27,7 @@ export async function GET(request: Request) {
 				lastUsedAt: passkey.lastUsedAt?.toISOString() ?? null,
 				backedUp: passkey.backedUp,
 				deviceType: passkey.deviceType,
+				aaguid: passkey.aaguid,
 			})),
-	});
+	}, { headers: { "Cache-Control": "no-store" } });
 }

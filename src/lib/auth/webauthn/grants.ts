@@ -1,13 +1,24 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { authStepUps, passkeyEnrollmentGrants } from "@/db/schema";
+import { authStepUps, passkeyEnrollmentGrants, users } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import { hashSessionToken } from "@/lib/auth/session";
+import type { StepUpAction } from "./step-up-types";
 
-const ENROLLMENT_MINUTES = 30;
-const STEP_UP_MINUTES = 5;
+const ENROLLMENT_MINUTES: Record<EnrollmentGrantKind, number> = {
+	// A first-run administrator may need to come back later in the same browser
+	// (for example after a password-manager prompt), so this outlives a normal
+	// settings change.
+	setup: 24 * 60,
+	recovery: 30,
+	admin: 30,
+};
+const STEP_UP_MINUTES = 10;
 
 export type EnrollmentGrantKind = "setup" | "recovery" | "admin";
+
+/** First-run setup token, kept in an HttpOnly cookie instead of the URL. */
+export const SETUP_COOKIE = "ep_setup";
 
 export type EnrollmentGrant = {
 	id: string;
@@ -33,7 +44,7 @@ export async function createEnrollmentGrant(
 		tokenHash: await hashSessionToken(token),
 		kind: input.kind,
 		createdByUserId: input.createdByUserId ?? null,
-		expiresAt: new Date(Date.now() + ENROLLMENT_MINUTES * 60 * 1000),
+		expiresAt: new Date(Date.now() + ENROLLMENT_MINUTES[input.kind] * 60 * 1000),
 	});
 	return token;
 }
@@ -65,49 +76,103 @@ export async function consumeEnrollmentGrant(env: CloudflareEnv, id: string): Pr
 	return rows.length > 0;
 }
 
-export async function createStepUpGrant(env: CloudflareEnv, userId: string, sessionToken: string): Promise<string> {
+async function currentSecurityVersion(env: CloudflareEnv, userId: string): Promise<number | null> {
+	const [row] = await getDb(env).select({ securityVersion: users.securityVersion }).from(users).where(eq(users.id, userId)).limit(1);
+	return row?.securityVersion ?? null;
+}
+
+export async function createStepUpGrant(
+	env: CloudflareEnv,
+	input: { userId: string; sessionToken: string; action: StepUpAction; targetUserId?: string | null },
+): Promise<string> {
 	const db = getDb(env);
+	const targetUserId = input.targetUserId ?? null;
+	const version = await currentSecurityVersion(env, targetUserId ?? input.userId);
+	if (version === null) throw new Error("The account no longer exists");
 	const token = newId("sup");
-	const sessionHash = await hashSessionToken(sessionToken);
 	await db.insert(authStepUps).values({
 		id: newId(),
-		userId,
-		sessionHash,
+		userId: input.userId,
+		sessionHash: await hashSessionToken(input.sessionToken),
 		tokenHash: await hashSessionToken(token),
-		purpose: "security",
+		purpose: input.action,
+		targetUserId,
+		securityVersion: version,
 		expiresAt: new Date(Date.now() + STEP_UP_MINUTES * 60 * 1000),
 	});
+	// Expired grants can never be consumed; dropping them keeps the table small.
+	await db.delete(authStepUps).where(lt(authStepUps.expiresAt, new Date()));
 	return token;
 }
 
+async function grantConditions(input: {
+	userId: string;
+	sessionToken: string;
+	action: StepUpAction;
+	targetUserId?: string | null;
+}) {
+	const targetUserId = input.targetUserId ?? null;
+	const target = targetUserId ?? input.userId;
+	return and(
+		eq(authStepUps.userId, input.userId),
+		eq(authStepUps.sessionHash, await hashSessionToken(input.sessionToken)),
+		eq(authStepUps.purpose, input.action),
+		targetUserId ? eq(authStepUps.targetUserId, targetUserId) : isNull(authStepUps.targetUserId),
+		eq(authStepUps.securityVersion, sql`(select ${users.securityVersion} from ${users} where ${users.id} = ${target})`),
+	);
+}
+
 /**
- * Single-use proof for one sensitive change, bound to the session that
- * requested it. Purpose is checked so a future use cannot borrow this grant.
+ * Non-consuming check used before opening a browser ceremony. Completion must
+ * still consume the grant atomically.
  */
-export async function consumeStepUpGrant(
+export async function peekStepUpGrant(
 	env: CloudflareEnv,
-	input: { token: string; userId: string; sessionToken: string; purpose?: string },
+	input: { token: string; userId: string; sessionToken: string; action: StepUpAction; targetUserId?: string | null },
 ): Promise<boolean> {
-	const db = getDb(env);
-	const [row] = await db
+	const [row] = await getDb(env)
 		.select({ id: authStepUps.id })
 		.from(authStepUps)
 		.where(
 			and(
+				await grantConditions(input),
 				eq(authStepUps.tokenHash, await hashSessionToken(input.token)),
-				eq(authStepUps.userId, input.userId),
-				eq(authStepUps.sessionHash, await hashSessionToken(input.sessionToken)),
-				eq(authStepUps.purpose, input.purpose ?? "security"),
 				isNull(authStepUps.usedAt),
 				gt(authStepUps.expiresAt, new Date()),
 			),
 		)
 		.limit(1);
-	if (!row) return false;
-	const rows = await db
+	return !!row;
+}
+
+/**
+ * Spends a grant for exactly the action and target it was minted for, and only
+ * while the target's security configuration is unchanged. The conditional
+ * UPDATE keeps this single-use under concurrency.
+ */
+export async function consumeStepUpGrant(
+	env: CloudflareEnv,
+	input: { token: string; userId: string; sessionToken: string; action: StepUpAction; targetUserId?: string | null },
+): Promise<boolean> {
+	const rows = await getDb(env)
 		.update(authStepUps)
 		.set({ usedAt: new Date() })
-		.where(and(eq(authStepUps.id, row.id), isNull(authStepUps.usedAt)))
+		.where(
+			and(
+				await grantConditions(input),
+				eq(authStepUps.tokenHash, await hashSessionToken(input.token)),
+				isNull(authStepUps.usedAt),
+				gt(authStepUps.expiresAt, new Date()),
+			),
+		)
 		.returning({ id: authStepUps.id });
 	return rows.length > 0;
+}
+
+/** Invalidates every outstanding grant once sign-in methods change. */
+export async function bumpSecurityVersion(db: ReturnType<typeof getDb>, userId: string): Promise<void> {
+	await db
+		.update(users)
+		.set({ securityVersion: sql`${users.securityVersion} + 1` })
+		.where(eq(users.id, userId));
 }

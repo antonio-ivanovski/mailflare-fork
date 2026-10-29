@@ -8,20 +8,26 @@ import { passkeySetupOptionsSchema } from "@/lib/validators";
 import { getEnrollmentGrant } from "@/lib/auth/webauthn/grants";
 import { listPasskeys } from "@/lib/auth/webauthn/credentials";
 import { createRegistrationOptions } from "@/lib/auth/webauthn/service";
-import { createCeremonyBinding, createWebAuthnChallenge, setCeremonyCookie } from "@/lib/auth/webauthn/challenges";
+import {
+	createCeremonyBinding,
+	createWebAuthnChallenge,
+	readCeremonyBindings,
+	setCeremonyCookie,
+} from "@/lib/auth/webauthn/challenges";
+import { authError } from "@/lib/http/auth-error";
 
 /**
  * Registration options for an enrolment grant. The grant, not a session, is
- * the authority here: first-run setup and recovery both use this route.
+ * the authority here: first-run setup and administrator recovery both use it.
  */
 export async function POST(request: Request) {
 	const env = getEnv();
 	const parsed = passkeySetupOptionsSchema.safeParse(await readJsonBody(request, 16 * 1024).catch(() => null));
-	if (!parsed.success) return NextResponse.json({ error: "Invalid setup link" }, { status: 400 });
+	if (!parsed.success) return authError("setup_invalid", 400);
 	const grant = await getEnrollmentGrant(env, parsed.data.token);
-	if (!grant) return NextResponse.json({ error: "This setup link is invalid or has expired" }, { status: 401 });
+	if (!grant) return authError("setup_invalid", 401);
 	const [user] = await getDb(env).select().from(users).where(eq(users.id, grant.userId)).limit(1);
-	if (!user || user.disabled || user.deletedAt) return NextResponse.json({ error: "Account disabled" }, { status: 403 });
+	if (!user || user.disabled || user.deletedAt) return authError("account_disabled", 403);
 
 	try {
 		// Recovery deliberately allows the same authenticator to register again:
@@ -37,9 +43,10 @@ export async function POST(request: Request) {
 		});
 		const response = NextResponse.json({ options, ceremonyToken, email: user.email });
 		response.headers.set("Cache-Control", "no-store");
-		setCeremonyCookie(response.headers, binding);
+		setCeremonyCookie(response.headers, binding, readCeremonyBindings(request));
 		return response;
 	} catch (error) {
-		return NextResponse.json({ error: error instanceof Error ? error.message : "Passkey setup is unavailable" }, { status: 500 });
+		const origin = error instanceof Error && /HTTPS|APP_URL/i.test(error.message);
+		return authError(origin ? "passkey_origin" : "passkey_unavailable", 503);
 	}
 }

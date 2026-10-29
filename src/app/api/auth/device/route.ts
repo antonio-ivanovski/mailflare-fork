@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 			// The app can only finish with TOTP or a recovery code. Without one of
 			// those, point the user at an app password rather than issuing a key
 			// after the password alone.
-			const codesAvailable = (await countUnusedRecoveryCodes(env, user.id)) > 0;
+			const codesAvailable = user.totpEnabled && (await countUnusedRecoveryCodes(env, user.id)) > 0;
 			if (!(user.totpEnabled && user.totpSecret) && !codesAvailable) {
 				return json({ error: "This account requires a passkey. Create an app password in the web app instead." }, 403);
 			}

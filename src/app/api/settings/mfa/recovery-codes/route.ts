@@ -2,25 +2,26 @@ import { NextResponse } from "next/server";
 import { getEnv } from "@/lib/cloudflare";
 import { requireSessionUser } from "@/lib/api/auth";
 import { readJsonBody } from "@/lib/http/request";
+import { getDb } from "@/db";
 import { issueRecoveryCodes } from "@/lib/auth/recovery-codes";
 import { mfaEnrollSchema } from "@/lib/validators";
 import { getSessionTokenFromRequestHeaders } from "@/lib/auth/session";
 import { authorizeSecurityChange } from "@/lib/auth/webauthn/authorize";
-import { countPasskeys } from "@/lib/auth/webauthn/credentials";
+import { bumpSecurityVersion } from "@/lib/auth/webauthn/grants";
+import { authError } from "@/lib/http/auth-error";
 
-/** Replace the recovery codes; the old ones stop working immediately. */
+/** Replaces authenticator-app recovery codes; the old ones stop working immediately. */
 export async function POST(request: Request) {
 	const env = getEnv();
 	const auth = await requireSessionUser(env, request);
-	if (auth.error) return auth.error;
+	if (auth.error) return authError("session_expired", 401);
 	const parsed = mfaEnrollSchema.safeParse(await readJsonBody(request, 16 * 1024).catch(() => null));
-	if (!parsed.success) return NextResponse.json({ error: "Verify your identity first" }, { status: 400 });
-	if (!(await authorizeSecurityChange(env, auth.user, getSessionTokenFromRequestHeaders(request), parsed.data))) {
-		return NextResponse.json({ error: "Verification failed" }, { status: 400 });
+	if (!parsed.success) return authError("verification_required", 400);
+	if (!auth.user.totpEnabled) return authError("invalid_request", 409);
+	if (!(await authorizeSecurityChange(env, auth.user, getSessionTokenFromRequestHeaders(request), parsed.data, "mfa.codes"))) {
+		return authError("verification_failed", 401);
 	}
-	// Codes protect every account with a second factor or a passkey, not just TOTP.
-	if (!auth.user.totpEnabled && (await countPasskeys(env, auth.user.id)) === 0) {
-		return NextResponse.json({ error: "Add a passkey or authenticator app first" }, { status: 400 });
-	}
-	return NextResponse.json({ recoveryCodes: await issueRecoveryCodes(env, auth.user.id) }, { headers: { "Cache-Control": "no-store" } });
+	const recoveryCodes = await issueRecoveryCodes(env, auth.user.id);
+	await bumpSecurityVersion(getDb(env), auth.user.id);
+	return NextResponse.json({ recoveryCodes }, { headers: { "Cache-Control": "no-store" } });
 }

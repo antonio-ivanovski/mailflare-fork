@@ -204,7 +204,9 @@ export function RegisterClient() {
         return;
       }
       setError(
-        typeof data.error === "string" ? data.error : t("setup.registrationFailed"),
+        data.code === "passkey_unavailable"
+          ? t("authError.passkeyUnavailable")
+          : typeof data.error === "string" ? data.error : t("setup.registrationFailed"),
       );
       setTurnstileReset((value) => value + 1);
       return;

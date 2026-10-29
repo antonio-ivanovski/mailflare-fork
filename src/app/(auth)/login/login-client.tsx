@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { browserSupportsWebAuthn } from "@simplewebauthn/browser";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	browserSupportsWebAuthn,
+	browserSupportsWebAuthnAutofill,
+	startAuthentication,
+	WebAuthnAbortService,
+} from "@simplewebauthn/browser";
 import { KeyRound, Mail, ShieldCheck } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -11,7 +16,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurnstileField } from "@/components/auth/turnstile";
-import { submitLogin, submitMfaCode, submitPasskeyLogin, submitPasskeyMfa } from "./utils";
+import { authErrorText } from "@/lib/auth/error-messages";
+import { isPasskeyCancellation } from "@/lib/auth/webauthn/browser-errors";
+import {
+	finishPasskeyLogin,
+	requestPasskeyLoginOptions,
+	submitLogin,
+	submitMfaCode,
+	submitPasskeyLogin,
+	submitPasskeyMfa,
+} from "./utils";
 
 export function LoginClient({ adding = false }: { adding?: boolean }) {
   const { t } = useLanguage();
@@ -23,11 +37,45 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [methods, setMethods] = useState<string[]>([]);
   const [code, setCode] = useState("");
+  const runningRef = useRef(false);
 
-  function finish(redirect?: string) {
+  const finish = useCallback((redirect?: string) => {
     router.replace(redirect ?? "/inbox");
     router.refresh();
-  }
+  }, [router]);
+
+  // Offer saved passkeys through the browser's credential picker. This is
+  // conditional mediation: it never opens a modal on its own.
+  useEffect(() => {
+    let cancelled = false;
+    if (!browserSupportsWebAuthn()) return;
+    void (async () => {
+      try {
+        if (!(await browserSupportsWebAuthnAutofill())) return;
+        const options = await requestPasskeyLoginOptions();
+        if (cancelled || !options.options || !options.ceremonyToken) return;
+        const response = await startAuthentication({
+          optionsJSON: options.options as Parameters<typeof startAuthentication>[0]["optionsJSON"],
+          useBrowserAutofill: true,
+        });
+        if (cancelled || runningRef.current) return;
+        runningRef.current = true;
+        setLoading(true);
+        const { ok, data } = await finishPasskeyLogin(options, response);
+        if (!ok) throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
+        finish(data.redirect);
+      } catch {
+        // No credential chosen, a cancelled prompt, or an unavailable
+        // autofill surface is not an error on page load.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      WebAuthnAbortService.cancelCeremony();
+    };
+  }, [finish, t]);
 
   async function onPasskey() {
     if (!browserSupportsWebAuthn()) {
@@ -38,13 +86,10 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
     setError(null);
     try {
       const { ok, data } = await submitPasskeyLogin();
-      if (!ok) throw new Error(data.error ?? t("passkey.loginFailed"));
+      if (!ok) throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
       finish(data.redirect);
     } catch (err) {
-      // A cancelled browser prompt is not an error worth alarming the user about.
-      if (!(err instanceof DOMException && err.name === "NotAllowedError")) {
-        setError(err instanceof Error ? err.message : t("passkey.loginFailed"));
-      }
+      setError(isPasskeyCancellation(err) ? t("authError.passkeyCancelled") : t("authError.passkeyUnavailable"));
     } finally {
       setLoading(false);
     }
@@ -56,12 +101,16 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
     setError(null);
     try {
       const { ok, data } = await submitPasskeyMfa(challengeToken);
-      if (!ok) throw new Error(data.error ?? t("passkey.loginFailed"));
+      if (!ok) {
+        if (data.code === "passkey_expired") {
+          setChallengeToken(null);
+          setMethods([]);
+        }
+        throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
+      }
       finish(data.redirect);
     } catch (err) {
-      if (!(err instanceof DOMException && err.name === "NotAllowedError")) {
-        setError(err instanceof Error ? err.message : t("passkey.loginFailed"));
-      }
+      setError(isPasskeyCancellation(err) ? t("authError.passkeyCancelled") : t("authError.passkeyUnavailable"));
     } finally {
       setLoading(false);
     }
@@ -75,7 +124,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
     try {
       const { ok, data } = await submitLogin(new FormData(e.currentTarget));
       if (!ok) {
-        setError(data.error ?? t("auth.loginFailed"));
+        setError(authErrorText(data.code, t, "auth.loginFailed"));
         setTurnstileReset((value) => value + 1);
         return;
       }
@@ -105,12 +154,12 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
     try {
       const { ok, data } = await submitMfaCode(challengeToken, code);
       if (!ok) {
-        setError(data.error ?? t("auth.codeMismatch"));
-        // An expired challenge sends the user back to the password step.
-        if (data.error?.includes("expired")) {
+        if (data.code === "passkey_expired") {
           setChallengeToken(null);
+          setMethods([]);
           setCode("");
         }
+        setError(authErrorText(data.code, t, "auth.codeMismatch"));
         return;
       }
       finish(data.redirect);
@@ -134,7 +183,6 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             <div className="space-y-4">
               <Button
                 type="button"
-                variant="outline"
                 className="h-11 w-full rounded-full"
                 disabled={loading}
                 onClick={() => void onPasskeyMfa()}
@@ -150,16 +198,21 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
           {hasCodeMethods && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="code">{t("auth.code")}</Label>
+                <Label htmlFor="code">{t("auth.codeOrRecovery")}</Label>
                 <Input
                   id="code"
                   name="code"
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
-                  inputMode="numeric"
+                  inputMode="text"
                   autoComplete="one-time-code"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   autoFocus
-                  placeholder="123 456"
+                  placeholder={t("auth.codePlaceholder")}
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "mfa-error" : undefined}
                   required={hasCodeMethods}
                 />
               </div>
@@ -169,7 +222,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             </>
           )}
           {error && (
-            <p role="alert" className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <p id="mfa-error" role="alert" className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               {error}
             </p>
           )}
@@ -178,6 +231,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             className="w-full text-center text-sm text-neutral-500 hover:text-neutral-800"
             onClick={() => {
               setChallengeToken(null);
+              setMethods([]);
               setCode("");
               setError(null);
             }}
@@ -206,7 +260,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             id="email"
             name="email"
             type="email"
-            autoComplete="email"
+            autoComplete="username webauthn"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "login-error" : undefined}
             required
@@ -253,9 +307,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
           <KeyRound className="h-4 w-4" />
           {t("passkey.signIn")}
         </Button>
-        <Link href="/recover" className="block w-full text-center text-sm text-neutral-500 hover:text-neutral-800">
-          {t("passkey.useRecoveryCode")}
-        </Link>
+        <p className="text-center text-xs leading-5 text-neutral-500">{t("passkey.lostAllHint")}</p>
       </form>
     </AuthShell>
   );

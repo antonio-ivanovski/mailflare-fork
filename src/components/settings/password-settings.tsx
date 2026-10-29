@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Copy, KeyRound } from "@/components/icons";
+import { useState } from "react";
+import { KeyRound } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updatePassword } from "./utils";
-import type { SecurityStatus } from "./passkey-settings-types";
-import { loadSecurityStatus, removePassword, setPassword } from "./passkey-settings-utils";
+import { authErrorText } from "@/lib/auth/error-messages";
+import { ClientRequestError } from "@/lib/http/client-error";
+import { removePassword, setPassword } from "./passkey-settings-utils";
+import { refreshSecurityStatus, useSecurityStatus } from "./security-status-store";
 import { StepUpDialog } from "./step-up-dialog";
 
 /**
@@ -18,7 +20,7 @@ import { StepUpDialog } from "./step-up-dialog";
  */
 export function PasswordSettings() {
 	const { t } = useLanguage();
-	const [status, setStatus] = useState<SecurityStatus | null>(null);
+	const { status, error: loadFailed } = useSecurityStatus();
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,18 +29,6 @@ export function PasswordSettings() {
 	const [busy, setBusy] = useState(false);
 	const [pending, setPending] = useState<"set" | "remove" | null>(null);
 	const [confirmRemove, setConfirmRemove] = useState(false);
-	const [codes, setCodes] = useState<string[] | null>(null);
-	const [copied, setCopied] = useState(false);
-
-	useEffect(() => {
-		loadSecurityStatus()
-			.then(setStatus)
-			.catch((err) => setError(err instanceof Error ? err.message : t("settings.password.failed")));
-	}, [t]);
-
-	async function refresh() {
-		setStatus(await loadSecurityStatus());
-	}
 
 	async function change(event: React.FormEvent) {
 		event.preventDefault();
@@ -55,8 +45,9 @@ export function PasswordSettings() {
 			setNewPassword("");
 			setConfirmPassword("");
 			setMessage(t("settings.password.changed"));
+			await refreshSecurityStatus(true);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("settings.password.failed"));
+			setError(authErrorText(err instanceof ClientRequestError ? err.code : undefined, t, "settings.password.failed"));
 		} finally {
 			setBusy(false);
 		}
@@ -64,29 +55,20 @@ export function PasswordSettings() {
 
 	async function authorized(token: string) {
 		setError(null);
-		setBusy(true);
-		try {
-			if (pending === "set") {
-				await setPassword(newPassword, token);
-				setNewPassword("");
-				setConfirmPassword("");
-				setMessage(t("passkey.passwordSet"));
-			} else {
-				const result = await removePassword(token);
-				setMessage(t("passkey.passwordRemoved"));
-				if (result.recoveryCodes?.length) setCodes(result.recoveryCodes);
-			}
-			await refresh();
-			window.dispatchEvent(new Event("mailflare:security-changed"));
-		} catch (err) {
-			setError(err instanceof Error ? err.message : t("passkey.actionFailed"));
-		} finally {
-			setBusy(false);
-			setPending(null);
+		if (pending === "set") {
+			await setPassword(newPassword, token);
+			setNewPassword("");
+			setConfirmPassword("");
+			setMessage(t("passkey.passwordSet"));
+		} else {
+			await removePassword(token);
+			setMessage(t("passkey.passwordRemoved"));
 		}
+		await refreshSecurityStatus(true);
+		setPending(null);
 	}
 
-	if (!status) return <p className="text-sm text-neutral-500">{t("mfa.loading")}</p>;
+	if (!status) return <p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("settings.password.failed") : t("mfa.loading")}</p>;
 
 	return (
 		<div className="space-y-4">
@@ -106,10 +88,17 @@ export function PasswordSettings() {
 					</div>
 					<div className="flex flex-wrap items-center gap-3">
 						<Button type="submit" disabled={busy}>{busy ? t("settings.password.changing") : t("settings.password.change")}</Button>
-						<Button type="button" variant="outline" onClick={() => setConfirmRemove(true)} disabled={busy}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setConfirmRemove(true)}
+							disabled={busy || status.passkeys.length === 0}
+							title={status.passkeys.length === 0 ? t("passkey.addBeforeRemovingPassword") : undefined}
+						>
 							{t("passkey.removePassword")}
 						</Button>
 					</div>
+					{status.passkeys.length === 0 && <p className="text-xs leading-5 text-neutral-500">{t("passkey.addBeforeRemovingPassword")}</p>}
 				</form>
 			) : (
 				<form
@@ -167,36 +156,10 @@ export function PasswordSettings() {
 				hasPasskey={status.passkeys.length > 0}
 				requireSecondFactor={status.requireSecondFactor}
 				totpEnabled={status.totpEnabled}
+				action={pending === "set" ? "password.set" : "password.remove"}
 				onOpenChange={(open) => !open && setPending(null)}
 				onAuthorized={authorized}
 			/>
-
-			<Dialog open={!!codes} onOpenChange={(open) => !open && setCodes(null)}>
-				<DialogContent className="sm:max-w-[480px]">
-					<DialogHeader>
-						<DialogTitle>{t("passkey.codesTitle")}</DialogTitle>
-						<DialogDescription>{t("passkey.codesDescription")}</DialogDescription>
-					</DialogHeader>
-					<ul className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 p-4 font-mono text-sm text-neutral-800">
-						{(codes ?? []).map((code) => <li key={code}>{code}</li>)}
-					</ul>
-					<div className="flex items-center gap-3">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => {
-								if (!codes) return;
-								void navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true));
-							}}
-						>
-							<Copy className="h-4 w-4" />
-							{copied ? t("common.copied") : t("mfa.copyCodes")}
-						</Button>
-						<Button type="button" onClick={() => setCodes(null)}>{t("common.done")}</Button>
-					</div>
-					<p className="text-xs leading-5 text-neutral-500">{t("passkey.codesHint")}</p>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }

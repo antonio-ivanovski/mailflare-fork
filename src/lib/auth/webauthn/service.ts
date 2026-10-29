@@ -12,6 +12,7 @@ import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { getWebAuthnConfig } from "./config";
 import { findPasskeyByCredentialId, recordPasskeyUse, savePasskey, toWebAuthnCredential, type StoredPasskey } from "./credentials";
+import { PasskeyVerificationError } from "./errors";
 
 type User = Pick<typeof users.$inferSelect, "id" | "email" | "name" | "disabled" | "deletedAt">;
 
@@ -26,6 +27,8 @@ export type VerifiedPasskeyRegistration = {
 	counter: number;
 	deviceType: string;
 	backedUp: boolean;
+	/** Authenticator model identifier; may be the all-zero AAGUID. */
+	aaguid?: string;
 	transports?: string[];
 	userVerified: boolean;
 };
@@ -97,6 +100,7 @@ export async function verifyPasskeyRegistrationResponse(
 		counter: info.credential.counter,
 		deviceType: info.credentialDeviceType,
 		backedUp: info.credentialBackedUp,
+		aaguid: info.aaguid,
 		transports: info.credential.transports,
 		userVerified: info.userVerified,
 	};
@@ -115,6 +119,7 @@ export async function savePasskeyRegistration(
 		counter: verified.counter,
 		deviceType: verified.deviceType,
 		backedUp: verified.backedUp,
+		aaguid: verified.aaguid,
 		transports: verified.transports,
 		name,
 	});
@@ -141,21 +146,21 @@ export async function verifyPasskeyAuthentication(
 	options: { requireUserHandle?: boolean; expectedUser?: User } = {},
 ): Promise<{ passkey: StoredPasskey & { user: User } }> {
 	const passkey = await findPasskeyByCredentialId(env, response.id);
-	if (!passkey) throw new Error("Unknown passkey");
+	if (!passkey) throw new PasskeyVerificationError("passkey_not_found");
 	const dbUser = options.expectedUser;
 	const user = dbUser
 		? dbUser
 		: (
 				await getDb(env).select().from(users).where(eq(users.id, passkey.userId)).limit(1)
 			)[0];
-	if (!user || user.disabled || user.deletedAt) throw new Error("Account disabled");
-	if (user.id !== passkey.userId) throw new Error("Passkey does not belong to this account");
+	if (!user || user.disabled || user.deletedAt) throw new PasskeyVerificationError("account_disabled");
+	if (user.id !== passkey.userId) throw new PasskeyVerificationError("passkey_not_found");
 
 	// A discoverable credential must carry the user handle it was registered with.
 	if (options.requireUserHandle) {
 		const handle = response.response.userHandle;
-		if (!handle) throw new Error("Passkey did not identify its account");
-		if (isoBase64URL.toUTF8String(handle) !== user.id) throw new Error("Passkey does not belong to this account");
+		if (!handle) throw new PasskeyVerificationError("passkey_not_found");
+		if (isoBase64URL.toUTF8String(handle) !== user.id) throw new PasskeyVerificationError("passkey_not_found");
 	}
 
 	const config = await getWebAuthnConfig(env, request);
@@ -167,8 +172,10 @@ export async function verifyPasskeyAuthentication(
 		credential: toWebAuthnCredential(passkey),
 		requireUserVerification: true,
 	});
-	if (!verification.verified) throw new Error("Passkey could not be verified");
-	if (!(await recordPasskeyUse(env, passkey, verification.authenticationInfo.newCounter))) throw new Error("Passkey counter is stale");
+	if (!verification.verified) throw new PasskeyVerificationError("passkey_invalid");
+	if (!(await recordPasskeyUse(env, passkey, verification.authenticationInfo.newCounter))) {
+		throw new PasskeyVerificationError("passkey_counter_stale");
+	}
 	return { passkey: Object.assign(passkey, { user }) };
 }
 

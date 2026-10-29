@@ -51,6 +51,12 @@ export const users = sqliteTable("users", {
 	requireSecondFactor: bool("require_second_factor").notNull().default(false),
 	/** Kept current by passkey_credentials triggers; lets the database reject the last-method removal. */
 	passkeyCount: integer("passkey_count").notNull().default(0),
+	/**
+	 * Bumped whenever a sign-in method or second-factor policy changes. Step-up
+	 * grants capture the value they were issued under, so a proof obtained
+	 * before a security change cannot be replayed after it.
+	 */
+	securityVersion: integer("security_version").notNull().default(0),
 	lastSignInAt: timestamp("last_sign_in_at"),
 	// Set when an admin deletes the account. The account is also `disabled` and can be restored until the
 	// retention window ends, after which the scheduled purge removes it and its data.
@@ -869,6 +875,9 @@ export const passkeyCredentials = sqliteTable(
 		transports: text("transports"),
 		deviceType: text("device_type").notNull(),
 		backedUp: bool("backed_up").notNull().default(false),
+		/** Authenticator model identifier, used only to suggest a friendly default name. */
+		aaguid: text("aaguid"),
+		/** Empty means "show the provider or a dated default"; the user can rename it. */
 		name: text("name").notNull(),
 		lastUsedAt: timestamp("last_used_at"),
 		createdAt: timestamp("created_at")
@@ -937,7 +946,11 @@ export const authStepUps = sqliteTable(
 			.references(() => users.id, { onDelete: "cascade" }),
 		sessionHash: text("session_hash").notNull(),
 		tokenHash: text("token_hash").notNull().unique(),
+		/** The exact action and, for administrator actions, the account it may affect. */
 		purpose: text("purpose").notNull(),
+		targetUserId: text("target_user_id"),
+		/** The target account's security_version at the time the grant was issued. */
+		securityVersion: integer("security_version").notNull().default(0),
 		expiresAt: timestamp("expires_at").notNull(),
 		usedAt: timestamp("used_at"),
 		createdAt: timestamp("created_at")

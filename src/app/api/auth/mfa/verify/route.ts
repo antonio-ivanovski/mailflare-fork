@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getEnv } from "@/lib/cloudflare";
 import { getDb } from "@/db";
@@ -11,6 +10,7 @@ import { recordAuthActivity } from "@/lib/auth/activity";
 import { consumeLoginChallenge, getLoginChallengeUserId } from "@/lib/auth/login-challenge";
 import { verifySecondFactor } from "@/lib/auth/mfa";
 import { completeLogin } from "@/lib/auth/login-response";
+import { authError } from "@/lib/http/auth-error";
 
 /** Second step of a login: trade a challenge plus a TOTP or recovery code for a session. */
 export async function POST(request: Request) {
@@ -20,32 +20,24 @@ export async function POST(request: Request) {
 		body = await readJsonBody(request, 16 * 1024);
 	} catch (error) {
 		const status = error instanceof RequestBodyTooLargeError ? 413 : 400;
-		return NextResponse.json({ error: "Invalid request" }, { status });
+		return authError("invalid_request", status);
 	}
 	const parsed = mfaVerifySchema.safeParse(body);
-	if (!parsed.success) {
-		return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-	}
+	if (!parsed.success) return authError("invalid_request", 400);
 	// Codes are six digits; the login limiter is what stops brute force.
 	if (!(await allowLoginAttempt(env, request))) {
-		return NextResponse.json({ error: "Too many attempts. Try again shortly." }, { status: 429, headers: { "Retry-After": "60" } });
+		return authError("rate_limited", 429, { "Retry-After": "60" });
 	}
 
 	const userId = await getLoginChallengeUserId(env, parsed.data.challengeToken);
-	if (!userId) {
-		return NextResponse.json({ error: "This sign-in attempt has expired. Start again." }, { status: 401 });
-	}
+	if (!userId) return authError("passkey_expired", 401);
 	const db = getDb(env);
 	const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-	if (!user || user.disabled || user.deletedAt) {
-		return NextResponse.json({ error: "Account disabled" }, { status: 403 });
-	}
+	if (!user || user.disabled || user.deletedAt) return authError("account_disabled", 403);
 	const method = await verifySecondFactor(env, user, parsed.data.code);
-	if (!method) {
-		return NextResponse.json({ error: "That code did not match" }, { status: 401 });
-	}
+	if (!method) return authError("code_mismatch", 401);
 	if (!(await consumeLoginChallenge(env, parsed.data.challengeToken))) {
-		return NextResponse.json({ error: "This sign-in attempt has expired. Start again." }, { status: 401 });
+		return authError("passkey_expired", 401);
 	}
 
 	// The factor is proven; the single challenge is burned so a replay cannot

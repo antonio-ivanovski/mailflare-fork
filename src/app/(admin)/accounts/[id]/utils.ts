@@ -1,4 +1,5 @@
 import { authFetch } from "@/lib/auth/client";
+import { requestError } from "@/lib/http/client-error";
 import { appendOptimizedAvatar } from "@/lib/avatar-upload-client";
 import type {
 	AccountDetail,
@@ -126,8 +127,8 @@ export async function saveManagedAccount(account: ManagedAccount, stepUpToken?: 
 			stepUpToken,
 		}),
 	});
-	const data = (await response.json()) as { error?: string };
-	if (!response.ok) throw new Error(data.error ?? "Unable to update account");
+	const data = (await response.json()) as { error?: string; code?: string };
+	if (!response.ok) throw requestError(data, "Unable to update account");
 }
 
 export type TransferCandidate = {

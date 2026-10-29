@@ -13,6 +13,7 @@ export async function saveAccountPassword({ event, account, password, stepUpToke
 		setMessage(t("account.password.resetDone"));
 	} catch (error) {
 		setMessage(error instanceof Error ? error.message : t("account.password.resetFailed"));
+		throw error;
 	} finally {
 		setSaving(false);
 	}

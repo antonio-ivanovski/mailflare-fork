@@ -56,10 +56,13 @@ function d1(sqlite) {
 	};
 }
 
-function database() {
+function database(beforeMigration) {
 	const sqlite = new Database(":memory:");
 	sqlite.pragma("foreign_keys = ON");
-	for (const migration of migrations) for (const statement of migration.statements) sqlite.exec(statement);
+	for (const migration of migrations) {
+		if (beforeMigration && migration.name >= beforeMigration) continue;
+		for (const statement of migration.statements) sqlite.exec(statement);
+	}
 	return sqlite;
 }
 
@@ -88,4 +91,18 @@ test("a backup with a passwordless passkey restores without tripping the last-me
 	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM users").get().count, 1);
 	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM passkey_credentials").get().count, 1);
 	assert.equal(sqlite.prepare("SELECT passkey_count FROM users WHERE id = 'u1'").get().passkey_count, 1);
+});
+
+test("a newer backup restores into a database that has the passkey table but not the aaguid column", async () => {
+	const source = database();
+	addUser(source);
+	source.prepare("UPDATE passkey_credentials SET aaguid = 'test-aaguid' WHERE id = 'p1'").run();
+	const backup = await exportDatabaseRecords(d1(source));
+
+	// Simulates an installation that applied the passkey migration but has not
+	// yet applied the later bound-grant migration.
+	const target = database("0080");
+	await restoreDatabaseRecords(d1(target), backup.buffer.slice(backup.byteOffset, backup.byteOffset + backup.byteLength));
+	assert.equal(target.prepare("SELECT COUNT(*) AS count FROM passkey_credentials").get().count, 1);
+	assert.equal(target.prepare("PRAGMA table_info(passkey_credentials)").all().some((column) => column.name === "aaguid"), false);
 });

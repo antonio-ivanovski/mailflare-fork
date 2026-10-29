@@ -202,11 +202,17 @@ The account id is the user id. Each Mailflare mailbox appears as a top-level JMA
 
 `Email/query` supports the `header` filter: `["Message-ID", "<id@example.com>"]` matches messages with that value, and `["Message-ID"]` matches any message that has the header. `Message-ID`, `In-Reply-To` and `References` are answered from stored columns; Message-IDs compare with or without angle brackets, and header names are case-insensitive. Any other header name returns an `unsupportedFilter` error rather than silently matching everything.
 
-## Password reset and two-factor authentication
+## Password reset, passkeys and two-factor authentication
 
-`POST /api/auth/password-reset/request` with `{ email }` always answers `200 { ok: true }`; when the account exists and has a recovery email, a single-use link valid for 30 minutes is mailed there. `POST /api/auth/password-reset/confirm` with `{ token, password }` sets the password and signs the account out everywhere.
+`POST /api/auth/password-reset/request` with `{ email }` always answers `200 { ok: true }`; when the account exists, has a password and has a recovery email, a single-use link valid for 30 minutes is mailed there. A passkey-only account never regains a password through email. `POST /api/auth/password-reset/confirm` with `{ token, password }` sets the password and signs the account out everywhere.
 
-When two-factor authentication is on, `POST /api/auth/login` returns `{ ok: true, mfaRequired: true, challengeToken }` instead of a session. `POST /api/auth/mfa/verify` with `{ challengeToken, code }` completes the sign-in; `code` is a 6-digit TOTP or one of the recovery codes. Challenges expire after 5 minutes. Enrolment, recovery codes and turning it off are under `/api/settings/mfa/*` (session auth) and always re-check the password.
+Passkeys are discoverable WebAuthn credentials. `POST /api/auth/passkey/options` starts a passwordless sign-in and `POST /api/auth/passkey/verify` completes it. Adding a passkey requires a step-up grant and is available under `/api/settings/passkeys/*`.
+
+When a second step is required after a password sign-in, `POST /api/auth/login` returns `{ ok: true, mfaRequired: true, challengeToken, methods }` instead of a session. `methods` names the available passkey, authenticator (`totp`) and authenticator-recovery (`recovery`) options. Finish with a passkey through `/api/auth/passkey/mfa/options` and `/api/auth/passkey/mfa/verify`, or with a code through `POST /api/auth/mfa/verify`. Challenges expire after 5 minutes.
+
+Passkeys satisfy the second step by themselves. Authentication recovery codes belong to the authenticator-app flow; they cannot replace passkeys. When every passkey is lost, an administrator can issue a one-time passkey enrolment link from the account page. For a sole administrator, run `npm run auth:recovery-link -- admin@example.com https://mail.example.com` on the server and send the printed 30-minute link through a trusted channel. With `DATABASE_URL` set it writes the grant directly; without it, the command prints the `wrangler d1 execute DB --remote …` statement to run against the default D1 database.
+
+Sensitive changes (`passkey.add`, `passkey.remove`, `password.set`, `password.remove`, `mfa.enroll`, `mfa.disable`, `mfa.codes`, `second_factor.toggle`, and the administrator actions) require a short-lived step-up grant from `POST /api/auth/step-up` (password plus code where required) or `/api/auth/step-up/options` + `/api/auth/step-up/verify` (passkey). Grants are single-use, bound to the session, action and target account, and become invalid when the account's security configuration changes.
 
 ## Searching
 

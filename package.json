@@ -20,6 +20,7 @@
     "db:generate:pg": "MAILFLARE_DB_DIALECT=postgres drizzle-kit generate --config=drizzle.config.pg.ts",
     "db:generate:mysql": "MAILFLARE_DB_DIALECT=mysql drizzle-kit generate --config=drizzle.config.mysql.ts",
     "db:smoke": "node scripts/run-ts.mjs scripts/db-smoke.ts",
+    "auth:recovery-link": "node scripts/run-ts.mjs scripts/passkey-recovery-link.ts",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "migrate": "wrangler d1 migrations apply DB",

@@ -6,9 +6,10 @@ import { selectAccountById } from "../utils";
 import { readJsonBody } from "@/lib/http/request";
 import { getSessionTokenFromRequestHeaders } from "@/lib/auth/session";
 import { authorizeSecurityChange } from "@/lib/auth/webauthn/authorize";
-import { createEnrollmentGrant } from "@/lib/auth/webauthn/grants";
+import { bumpSecurityVersion, createEnrollmentGrant } from "@/lib/auth/webauthn/grants";
 import { getPublicOrigin } from "@/lib/auth/webauthn/config";
 import { createAuditLog } from "@/lib/mailboxes/audit";
+import { authError } from "@/lib/http/auth-error";
 import type { AccountRouteParams } from "../types";
 
 /**
@@ -21,15 +22,25 @@ export async function POST(request: Request, { params }: AccountRouteParams) {
 	if (access.error) return access.error;
 	const { id } = await params;
 	const account = await selectAccountById(getDb(access.env), id);
-	if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+	if (!account) return authError("invalid_request", 404);
 	const actor = access.user!;
 	if (!isPrimaryAdmin(actor) && !canManageUserAccount(actor, account)) {
-		return NextResponse.json({ error: "Only the primary admin can manage admin accounts" }, { status: 403 });
+		return authError("verification_failed", 403);
 	}
 	const body = (await readJsonBody(request, 16 * 1024).catch(() => null)) as { password?: string; stepUpToken?: string; code?: string } | null;
-	if (!(await authorizeSecurityChange(access.env, actor, getSessionTokenFromRequestHeaders(request), body ?? {}))) {
-		return NextResponse.json({ error: "Verify your identity before creating a recovery link" }, { status: 401 });
+	if (!(await authorizeSecurityChange(
+		access.env,
+		actor,
+		getSessionTokenFromRequestHeaders(request),
+		body ?? {},
+		"admin.recovery_link",
+		{ targetUserId: account.id },
+	))) {
+		return authError("verification_required", 401);
 	}
+	// A new link supersedes old proofs for this account; issue it against the
+	// bumped version so the grant remains valid.
+	await bumpSecurityVersion(getDb(access.env), account.id);
 	const token = await createEnrollmentGrant(access.env, { userId: account.id, kind: "admin", createdByUserId: actor.id });
 	await createAuditLog(access.env, {
 		actorUserId: actor.id,

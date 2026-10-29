@@ -77,8 +77,8 @@ export async function verifySecondFactor(
 	code: string,
 ): Promise<"totp" | "recovery" | null> {
 	if (user.totpEnabled && user.totpSecret && (await verifyTotp(user.totpSecret, code))) return "totp";
-	// Recovery codes also cover accounts whose only second factor is a passkey,
-	// so a lost authenticator does not strand a password login.
-	if (await consumeRecoveryCode(env, user.id, code)) return "recovery";
+	// Recovery codes belong to the authenticator flow. They must not become a
+	// second factor for an account that never enrolled TOTP.
+	if (user.totpEnabled && (await consumeRecoveryCode(env, user.id, code))) return "recovery";
 	return null;
 }

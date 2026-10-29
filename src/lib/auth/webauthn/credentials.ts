@@ -50,6 +50,7 @@ export async function buildPasskeyRow(
 		counter: number;
 		deviceType: string;
 		backedUp: boolean;
+		aaguid?: string | null;
 		transports?: string[];
 		name: string;
 	},
@@ -64,7 +65,11 @@ export async function buildPasskeyRow(
 		transports: input.transports?.length ? input.transports.join(",") : null,
 		deviceType: input.deviceType,
 		backedUp: input.backedUp,
-		name: input.name,
+		aaguid: input.aaguid ?? null,
+		// An empty name is intentional: the UI shows the passkey provider or a
+		// dated default until the user renames it. The native credential manager
+		// controls its own label, which WebAuthn cannot read or set.
+		name: input.name.trim(),
 	};
 }
 
