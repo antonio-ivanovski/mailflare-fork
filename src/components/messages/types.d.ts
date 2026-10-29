@@ -79,7 +79,7 @@ export type MessageListStateControl = {
 	setUnreadOnly: Dispatch<SetStateAction<boolean>>;
 };
 
-export type BulkMessageSelectionPaneProps = {
+export type BulkMessageActionBarProps = {
 	folder?: MessageFolder;
 	selectedMessages: SelectedMessage[];
 	onClearSelection: () => void;

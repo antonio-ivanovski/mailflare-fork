@@ -98,6 +98,7 @@ export function usePageLoading() {}
 `],
 	["@/components/sidebar-mobile-utils", `
 export function useIsMobile() { return false; }
+export function useIsDesktop() { return globalThis.__testIsDesktop !== false; }
 `],
 	["@/components/messages/use-conversation-view", `
 export function useConversationView() { return [true, () => {}]; }
@@ -122,9 +123,24 @@ export function SwipeableRow({ children }) { return children; }
 await build({
 	stdin: {
 		contents: `
-			export { MessageSplitLayout } from "./src/components/messages/message-split-layout.tsx";
-			export { MessageFolderPage } from "./src/components/messages/message-folder-page.tsx";
-			export { inboxFolderConfig } from "./src/components/messages/message-folder-configs.ts";
+			import React from "react";
+			import { usePathname } from "next/navigation";
+			import { MessageSplitLayout } from "./src/components/messages/message-split-layout.tsx";
+			import { MessageFolderPage } from "./src/components/messages/message-folder-page.tsx";
+			import { inboxFolderConfig } from "./src/components/messages/message-folder-configs.ts";
+
+			export function Harness() {
+				const pathname = usePathname();
+				const detailPrefix = "/inbox/";
+				const detailId = pathname.startsWith(detailPrefix) ? pathname.slice(detailPrefix.length) : null;
+				return React.createElement(
+					MessageSplitLayout,
+					{ config: inboxFolderConfig },
+					detailId
+						? React.createElement("div", { "data-testid": "message-detail", "data-message-id": detailId }, "Message detail")
+						: React.createElement(MessageFolderPage, { config: inboxFolderConfig }),
+				);
+			}
 		`,
 		resolveDir: root,
 		sourcefile: "message-selection-entry.tsx",
@@ -156,7 +172,7 @@ await build({
 
 const { createElement, act } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { MessageSplitLayout, MessageFolderPage, inboxFolderConfig } = await import(pathToFileURL(join(temp, "entry.mjs")).href);
+const { Harness } = await import(pathToFileURL(join(temp, "entry.mjs")).href);
 
 function message(id, read = false) {
 	return {
@@ -207,17 +223,14 @@ globalThis.__testMessageList = (filters) => {
 	};
 };
 
-async function renderInbox() {
+async function renderInbox({ desktop = true } = {}) {
+	globalThis.__testIsDesktop = desktop;
 	globalThis.__setTestPathname("/inbox");
 	const container = document.createElement("div");
 	document.body.appendChild(container);
 	const reactRoot = createRoot(container);
 	await act(async () => {
-		reactRoot.render(createElement(
-			MessageSplitLayout,
-			{ config: inboxFolderConfig },
-			createElement(MessageFolderPage, { config: inboxFolderConfig }),
-		));
+		reactRoot.render(createElement(Harness));
 	});
 	return {
 		container,
@@ -247,7 +260,17 @@ test("opening a message keeps the selection made while no message was open", asy
 	});
 
 	assert.equal(checkedBoxes(container).length, 1, "the sidebar list keeps the selected row");
-	assert.match(container.textContent, /common\.selectedCount:1/, "the bulk selection pane still reports one selected message");
+	assert.ok(container.querySelector('[data-testid="message-detail"]'), "the focused message stays visible");
+	assert.match(container.textContent, /common\.selectedCount:1/, "the bulk action bar reports one selected message");
+
+	const clearSelection = container.querySelector('button[aria-label="common.clearSelection"]');
+	assert.ok(clearSelection, "the bulk action bar offers a way to clear the selection");
+	await act(async () => {
+		clearSelection.click();
+	});
+	assert.ok(container.querySelector('[data-testid="message-detail"]'), "clearing the selection keeps the message visible");
+	assert.equal(checkedBoxes(container).length, 0, "clearing the selection unchecks the sidebar row");
+	assert.doesNotMatch(container.textContent, /common\.selectedCount:1/, "the bulk action bar disappears");
 });
 
 test("opening a message keeps the selection on a page other than the first", async (t) => {
@@ -271,4 +294,23 @@ test("opening a message keeps the selection on a page other than the first", asy
 	});
 
 	assert.equal(checkedBoxes(container).length, 1, "the sidebar list stays on the same page and keeps the selected row");
+	assert.ok(container.querySelector('[data-testid="message-detail"]'), "the focused message stays visible on the second page too");
+});
+
+test("the focused-message bulk bar stays in the split view", async (t) => {
+	const { container, cleanup } = await renderInbox({ desktop: false });
+	t.after(cleanup);
+
+	const rowCheckbox = container.querySelectorAll('input[type="checkbox"]')[1];
+	await act(async () => {
+		rowCheckbox.click();
+	});
+
+	await act(async () => {
+		globalThis.__setTestPathname("/inbox/m1");
+	});
+
+	assert.ok(container.querySelector('[data-testid="message-detail"]'), "single-column reading still opens the message");
+	assert.equal(checkedBoxes(container).length, 1, "the selection survives");
+	assert.equal(container.querySelector('[role="region"]'), null, "the bulk bar is hidden without a visible split list");
 });

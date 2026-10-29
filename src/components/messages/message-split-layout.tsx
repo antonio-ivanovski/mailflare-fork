@@ -7,9 +7,10 @@ import { useSidebar } from "@/components/sidebar-state";
 import { useAssistantOpen } from "@/components/agent/assistant-open-state";
 import { useMailSearch } from "@/components/mail-search/mail-search-context";
 import { useSelectedMailbox } from "@/components/mailbox-provider";
+import { useIsDesktop } from "@/components/sidebar-mobile-utils";
 import { readColumnWidth, readInitialColumnWidth, saveColumnWidth } from "@/components/column-width-preferences";
 import { ResizeHandle } from "@/components/ui/resize-handle";
-import { BulkMessageSelectionPane } from "./bulk-message-selection-pane";
+import { BulkMessageActionBar } from "./bulk-message-action-bar";
 import { MessageFolderPage } from "./message-folder-page";
 import { MessageDetailNavigationProvider } from "./message-detail-navigation";
 import { MessageListStateContext } from "./message-list-state";
@@ -40,6 +41,7 @@ export function MessageSplitLayout({
 	const resizedWidth = useRef(listWidth);
 	const { t } = useLanguage();
 	const { userId, setForcedMinimal } = useSidebar();
+	const isDesktop = useIsDesktop();
 	const assistantOpen = useAssistantOpen();
 	const listVisible = twoColumnReading && !assistantOpen && manualListVisible;
 	const detailPrefix = `${config.hrefPrefix}/`;
@@ -64,6 +66,7 @@ export function MessageSplitLayout({
 	const previousViewKey = useRef(viewKey);
 	const folderKey = `${config.folder}\u0000${config.folderId ?? ""}`;
 	const previousFolderKey = useRef(folderKey);
+	const showBulkBar = selectedMessages.length > 0 && twoColumnReading && isDesktop;
 
 	useEffect(() => {
 		if (previousViewKey.current === viewKey) return;
@@ -143,15 +146,14 @@ export function MessageSplitLayout({
 				<MessageListVisibilityContext.Provider value={{ visible: listVisible, toggle: () => { const visible = !manualListVisible; setManualListVisible(visible); saveMessageListVisible(visible); }, singleColumn: !twoColumnReading, backHref: config.hrefPrefix, backLabel: config.titleKey ? t(config.titleKey) : config.title }}>
 				<MessageDetailNavigationProvider config={config}>
 				<section className="min-h-0 min-w-0 overflow-hidden bg-white flex flex-col h-full">
-					{twoColumnReading && selectedMessages.length > 0 ? (
-						<BulkMessageSelectionPane
-							folder={config.folder}
+					{showBulkBar && (
+						<BulkMessageActionBar
+							folder={config.folderId ? undefined : config.folder}
 							selectedMessages={selectedMessages}
 							onClearSelection={() => setSelectedMessages([])}
 						/>
-					) : (
-						children
 					)}
+					{children}
 				</section>
 				</MessageDetailNavigationProvider>
 				</MessageListVisibilityContext.Provider>

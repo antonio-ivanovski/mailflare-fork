@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Cloud, ExternalLink } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { formatUserDate } from "@/lib/time/utils";
-import { MarkAsRead } from "@/components/mark-read";
+import { markMessageRead } from "@/components/mark-read";
 import { useSelectedMailbox } from "@/components/mailbox-provider";
 import { ContactDetailsTrigger } from "@/components/contacts/contact-details";
 import { ContactAvatar } from "@/components/contacts/contact-avatar";
@@ -80,6 +80,7 @@ export default function MessageDetailPage() {
       if (cachedData?.message && cachedData.body) {
         setData(cachedData);
         setLoading(false);
+        if (!cachedData.message.read) void markMessageRead(cachedData.message.id);
         if (cachedData.attachments !== undefined) return;
         try {
           const metadata = await fetchMessageMetadata(messageId);
@@ -94,6 +95,7 @@ export default function MessageDetailPage() {
       if (!cancelled) {
         setData(nextData);
         setLoading(false);
+        if ("message" in nextData && nextData.message && !nextData.message.read) void markMessageRead(nextData.message.id);
       }
     }
 
@@ -106,6 +108,22 @@ export default function MessageDetailPage() {
   useEffect(() => {
     setThreadExpanded(false);
     setDetailsOpen(false);
+  }, [messageId]);
+
+  // A bulk read/unread action can include the message that is already open.
+  // Keep the mounted reader in sync with the cache instead of remounting it.
+  useEffect(() => {
+    function syncCachedReadState() {
+      const cached = getCachedMessageDetailForDisplay(messageId);
+      if (!cached?.message) return;
+      const cachedRead = cached.message.read;
+      setData((current) => {
+        if (!current?.message || current.message.read === cachedRead) return current;
+        return { ...current, message: { ...current.message, read: cachedRead } };
+      });
+    }
+    window.addEventListener("mailflare:messages-changed", syncCachedReadState);
+    return () => window.removeEventListener("mailflare:messages-changed", syncCachedReadState);
   }, [messageId]);
 
   if (loading) {
@@ -197,8 +215,6 @@ export default function MessageDetailPage() {
     </div>
 
     <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto overscroll-contain scrollbar-gutter-stable flex-1 min-h-0">
-      {!message.read && <MarkAsRead messageId={message.id} />}
-
       <h1 className={clsx(!isAnyPanelVisible ? "sm:pl-16" : "sm:pl-10", "px-4 pb-2 pt-2 text-2xl text-neutral-900 sm:pr-6")} title={message.subject ?? t("list.noSubject")}>
         {message.subject ?? t("list.noSubject")}
       </h1>
