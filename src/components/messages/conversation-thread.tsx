@@ -14,6 +14,7 @@ import { useLanguage } from "@/components/language-provider";
 import { cn } from "@/lib/utils";
 import type { ConversationMessageCardProps, ConversationThreadProps } from "./conversation-thread-types";
 import { ThreadMessageActions } from "./thread-message-actions";
+import { MessageDetailsPanel } from "./message-details-panel";
 import { MessageOpenStatus } from "./message-open-status";
 import { MessageFollowUpStatus } from "@/components/follow-ups/message-follow-up-status";
 import {
@@ -192,6 +193,9 @@ export function ConversationMessageCard({
 					<span className={clsx(!locallyRead ? "font-semibold" : "", "shrink-0 items-center gap-2 text-xs mr-2 mt-2", "hidden sm:flex")}>
 						{attachments.length > 0 && <Paperclip className="h-3.5 w-3.5" aria-label={t("thread.attachmentCount", { count: attachments.length })} />}
 						{formatUserDate(message.createdAt, { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+						<button type="button" className="text-blue-600 hover:underline" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((open) => !open)}>
+							{t("message.details")}
+						</button>
 					</span>
 					<ThreadMessageActions
 						message={message}
@@ -207,13 +211,7 @@ export function ConversationMessageCard({
 							{t("message.details")}
 						</button>
 					</div>
-					{detailsOpen && (
-						<dl className="sm:hidden w-full space-y-0.5 break-words pt-2 text-xs text-neutral-500">
-							<div><dt className="inline font-medium">{t("source.from")}:</dt> <dd className="inline">{sender} &lt;{senderEmail}&gt;</dd></div>
-							{recipients && <div><dt className="inline font-medium">{t("source.to")}:</dt> <dd className="inline">{recipients}</dd></div>}
-							<div><dt className="inline font-medium">{t("message.date")}:</dt> <dd className="inline">{formatUserDate(message.createdAt, { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</dd></div>
-						</dl>
-					)}
+					{detailsOpen && <MessageDetailsPanel message={message} className="w-full" />}
 				</div>
 				{expanded && body && (
 					<div className="pb-4 pt-2 sm:pl-16">

@@ -22,6 +22,7 @@ import { ScheduledSendBanner } from "@/components/messages/scheduled-send-banner
 import { formatScheduledSendTime } from "@/components/messages/scheduled-send-utils";
 import { QuotedEmailToggle } from "@/components/messages/quoted-email-toggle";
 import { ThreadMessageActions } from "@/components/messages/thread-message-actions";
+import { MessageDetailsPanel } from "@/components/messages/message-details-panel";
 import { useMessageThread } from "@/components/messages/use-message-thread";
 import { useLatestMessagesFirst } from "@/components/messages/use-latest-messages-first";
 import { useMessageListVisibility } from "@/components/messages/message-list-visibility";
@@ -282,6 +283,14 @@ export default function MessageDetailPage() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <p className="hidden text-xs sm:block">{messageDate(true)}</p>
+              <button
+                type="button"
+                className="hidden text-xs text-blue-600 hover:underline sm:inline"
+                aria-expanded={detailsOpen}
+                onClick={() => setDetailsOpen((open) => !open)}
+              >
+                {t("message.details")}
+              </button>
               <ThreadMessageActions
                 message={currentThreadMessage}
                 mailboxId={message.mailboxId}
@@ -290,13 +299,7 @@ export default function MessageDetailPage() {
                 starOnly={!thread.messages.some((threadMessage) => threadMessage.id === message.id) || !thread.messages.some((threadMessage) => threadMessage.id !== message.id)}
               />
             </div>
-            {detailsOpen && (
-              <dl className="sm:hidden w-full space-y-0.5 break-words pt-2 text-xs text-neutral-500">
-                <div><dt className="inline font-medium">{t("source.from")}:</dt> <dd className="inline">{fromName} &lt;{fromAddress}&gt;</dd></div>
-                <div><dt className="inline font-medium">{t("source.to")}:</dt> <dd className="inline">{toEntries.join(", ")}</dd></div>
-                <div><dt className="inline font-medium">{t("message.date")}:</dt> <dd className="inline">{messageDate(true)}</dd></div>
-              </dl>
-            )}
+            {detailsOpen && <MessageDetailsPanel message={message} className="w-full" />}
           </div>
           {scheduledAt && <div className="px-4 sm:px-0 sm:pl-10"><ScheduledSendBanner messageId={message.id} scheduledAt={scheduledAt} /></div>}
           <div className="prose max-w-none px-4 text-neutral-900 sm:px-0 sm:pl-16">
