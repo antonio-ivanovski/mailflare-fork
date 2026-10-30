@@ -1,11 +1,37 @@
 import { createHmac } from "node:crypto";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const EMAIL = "admin@example.com";
 const PASSWORD = "demo-password-change-me";
 let authenticatorId = "";
 /** The authenticator secret of the running enrollment, used to sign a code. */
 let totpSecret = "";
+
+/**
+ * A fresh instance has no schema yet, so a reset cannot delete or seed the demo
+ * account. The setup route applies the bundled migrations; a 403 means an admin
+ * already exists, which also means the database is initialized.
+ */
+async function prepareDatabase(request: APIRequestContext) {
+	const response = await request.post("/api/setup/prepare");
+	if (response.status() === 403) return;
+	const body = await response.json().catch(() => null);
+	expect(response.ok(), `POST /api/setup/prepare returned ${response.status()}: ${JSON.stringify(body)}`).toBe(true);
+	expect(body?.checks?.every((check: { configured: boolean }) => check.configured)).toBe(true);
+	expect(typeof body?.migrated).toBe("boolean");
+}
+
+/** Reset and seed the demo account, failing instead of leaving the next test without credentials. */
+async function resetDemo(request: APIRequestContext) {
+	const response = await request.post("/api/seed?reset=1");
+	const body = await response.json().catch(() => null);
+	expect(response.ok(), `POST /api/seed?reset=1 returned ${response.status()}: ${JSON.stringify(body)}`).toBe(true);
+	expect(body?.ok).toBe(true);
+}
+
+test.beforeAll(async ({ request }) => {
+	await prepareDatabase(request);
+});
 
 test("passkey setup explains when the browser is unsupported", async ({ page }) => {
 	await page.addInitScript(() => {
@@ -60,7 +86,7 @@ async function logout(page: Page) {
 
 // Leave the documented demo password usable after the lifecycle test removes it.
 test.afterEach(async ({ request }) => {
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 });
 
 /**
@@ -163,7 +189,7 @@ async function enrollAuthenticator(page: Page) {
 
 test("passkey lifecycle: add, rename, sign in, second step, password removal", async ({ page, request }) => {
 	test.setTimeout(180_000);
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.11");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -252,7 +278,7 @@ test("passkey lifecycle: add, rename, sign in, second step, password removal", a
 
 test("first passkey can make the account passkey-only", async ({ page, request }) => {
 	test.setTimeout(180_000);
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.12");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -280,7 +306,7 @@ test("first passkey can make the account passkey-only", async ({ page, request }
 
 test("turning the authenticator off keeps the two-step policy as it was", async ({ page, request }) => {
 	test.setTimeout(180_000);
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.14");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -307,7 +333,7 @@ test("turning the authenticator off keeps the two-step policy as it was", async 
 test("adding a password chooses its second-factor policy with one passkey scan", async ({ page, request }) => {
 	test.setTimeout(240_000);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.15");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -380,7 +406,7 @@ test("adding a password chooses its second-factor policy with one passkey scan",
 test("removing the last passkey warns and disables its second-factor requirement", async ({ page, request }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.16");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -432,7 +458,7 @@ test("removing the last passkey warns and disables its second-factor requirement
 
 test("removing the last passkey preserves authenticator two-step verification", async ({ page, request }) => {
 	test.setTimeout(180_000);
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.17");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
@@ -458,7 +484,7 @@ test("removing the last passkey preserves authenticator two-step verification", 
 
 test("first passkey removes the password and the authenticator codes together", async ({ page, request }) => {
 	test.setTimeout(180_000);
-	await request.post("/api/seed?reset=1");
+	await resetDemo(request);
 	await isolateRateLimit(page, "203.0.113.13");
 	await enableVirtualAuthenticator(page);
 	await setPresence(page, false);
