@@ -13,6 +13,13 @@ to reuse an existing server. To explicitly select a running test instance:
 PLAYWRIGHT_BASE_URL=http://localhost:3001 npm run test:e2e -- tests/e2e/passkeys.spec.ts
 ```
 
+To keep your normal local database untouched, start a separate instance with
+disposable storage, then target it with `PLAYWRIGHT_BASE_URL`:
+
+```sh
+MAILFLARE_TEST_STATE_PATH="$(mktemp -d)" npx vp dev --port 3002 --strictPort
+```
+
 Use a disposable local instance: the tests reset `admin@example.com` before and
 after each scenario, deleting its passkeys, sessions, and other account data.
 They leave the demo password `demo-password-change-me` usable afterward. Do not

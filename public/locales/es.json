@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "La aplicación de autenticación y la contraseña se quitan por separado.",
 	"passkey.authenticatorOffNotice": "Los códigos de la aplicación de autenticación están desactivados. Tu contraseña sigue funcionando.",
 	"passkey.setupRecoveryDescription": "Esta clave de acceso sustituye la contraseña, los códigos de la aplicación de autenticación y los códigos de recuperación de la cuenta. Se cerrarán las demás sesiones.",
-	"passkey.removePasswordRecommended": "Recomendado: tu clave de acceso te inicia sesión por sí sola, así que la contraseña ya no hace falta."
+	"passkey.removePasswordRecommended": "Recomendado: tu clave de acceso te inicia sesión por sí sola, así que la contraseña ya no hace falta.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

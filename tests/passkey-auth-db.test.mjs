@@ -143,7 +143,7 @@ test("step-up grants carry the acting account's security version", () => {
 
 test("PostgreSQL and MySQL ship the consolidated passkey triggers and bound-grant columns", () => {
 	for (const directory of ["drizzle/migrations-pg", "drizzle/migrations-mysql"]) {
-		const sql = readFileSync(new URL(`../${directory}/0003_passkeys_and_step_up_grants.sql`, import.meta.url), "utf8");
+		const sql = readFileSync(new URL(`../${directory}/0004_passkeys_and_step_up_grants.sql`, import.meta.url), "utf8");
 		for (const needle of ["passkey_count", "last-auth-method", "second-factor-unavailable", "security_version", "actor_security_version", "target_user_id"]) {
 			assert.ok(sql.includes(needle), `${directory} lacks ${needle}`);
 		}

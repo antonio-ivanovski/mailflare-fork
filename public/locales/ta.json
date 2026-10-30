@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "அங்கீகரிப்புச் செயலியும் கடவுச்சொல்லும் ஒவ்வொன்றாக அகற்றப்படும்.",
 	"passkey.authenticatorOffNotice": "அங்கீகரிப்புக் குறியீடுகள் அணைக்கப்பட்டுள்ளன. உங்கள் கடவுச்சொல் இயங்குகிறது.",
 	"passkey.setupRecoveryDescription": "இந்தப் பாஸ்கீ கணக்கின் கடவுச்சொல்லையும், அங்கீகரிப்புக் குறியீடுகளையும், மீட்புக் குறியீடுகளையும் மாற்றும். மற்ற செயல்கள் வெளியேற்றப்படும்.",
-	"passkey.removePasswordRecommended": "பரிந்துரைக்கப்படுகிறது: பாஸ்கீ மட்டும் உள்நுழைவைச் செய்வதால், இப்போது கடவுச்சொல் தேவையில்லை."
+	"passkey.removePasswordRecommended": "பரிந்துரைக்கப்படுகிறது: பாஸ்கீ மட்டும் உள்நுழைவைச் செய்வதால், இப்போது கடவுச்சொல் தேவையில்லை.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

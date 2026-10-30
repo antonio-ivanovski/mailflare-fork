@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "ਪ੍ਰਮਾਣੀਕਰਨ ਐਪ ਅਤੇ ਪਾਸਵਰਡ ਇੱਕ-ਇੱਕ ਕਰਕੇ ਹਟਾਏ ਜਾਣਗੇ.",
 	"passkey.authenticatorOffNotice": "ਪ੍ਰਮਾਣੀਕਰਨ ਕੋਡ ਬੰਦ ਕਰ ਦਿੱਤੇ ਗਏ ਹਨ. ਤੁਹਾਡਾ ਪਾਸਵਰਡ ਹਾਲੇ ਵੀ ਕੰਮ ਕਰਦਾ ਹੈ.",
 	"passkey.setupRecoveryDescription": "ਇਹ ਪਾਸਕੀ ਖਾਤੇ ਦਾ ਪਾਸਵਰਡ, ਪ੍ਰਮਾਣੀਕਰਨ ਕੋਡ ਅਤੇ ਰਿਕਵਰੀ ਕੋਡ ਬਦਲ ਦਿੰਦੀ ਹੈ. ਤੁਹਾਡੇ ਹੋਰ ਸੈਸ਼ਨ ਬੰਦ ਹੋ ਜਾਣਗੇ.",
-	"passkey.removePasswordRecommended": "ਸਿਫ਼ਾਰਸ਼: ਤੁਹਾਡੀ ਪਾਸਕੀ ਅਕੱਲੀ ਸਾਈਨ ਇਨ ਕਰਾਂ ਦਿੰਦੀ ਹੈ, ਇਸ ਲਈ ਹੁਣ ਪਾਸਵਰਡ ਦੀ ਲੋੜ ਨਹੀਂ."
+	"passkey.removePasswordRecommended": "ਸਿਫ਼ਾਰਸ਼: ਤੁਹਾਡੀ ਪਾਸਕੀ ਅਕੱਲੀ ਸਾਈਨ ਇਨ ਕਰਾਂ ਦਿੰਦੀ ਹੈ, ਇਸ ਲਈ ਹੁਣ ਪਾਸਵਰਡ ਦੀ ਲੋੜ ਨਹੀਂ.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

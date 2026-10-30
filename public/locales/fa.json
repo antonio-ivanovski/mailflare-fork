@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "برنامه احراز هویت و گذرواژه یکی‌یکی برداشته می‌شوند.",
 	"passkey.authenticatorOffNotice": "کدهای احراز هویت خاموش شدند. گذرواژه شما همچنان کار می‌کند.",
 	"passkey.setupRecoveryDescription": "این کلید عبور جای گذرواژه، کدهای احراز هویت و کدهای بازیابی حساب را می‌گیرد. نشست‌های دیگر شما بسته می‌شوند.",
-	"passkey.removePasswordRecommended": "توصیه‌شده: کلید عبور به‌تنهایی وارد می‌کند، پس دیگر به گذرواژه نیازی نیست."
+	"passkey.removePasswordRecommended": "توصیه‌شده: کلید عبور به‌تنهایی وارد می‌کند، پس دیگر به گذرواژه نیازی نیست.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

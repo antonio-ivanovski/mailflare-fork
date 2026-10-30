@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "Ứng dụng xác thực và mật khẩu sẽ được gỡ bỏ lần lượt.",
 	"passkey.authenticatorOffNotice": "Mã xác thực đã tắt. Mật khẩu của bạn vẫn dùng được.",
 	"passkey.setupRecoveryDescription": "Passkey này thay thế mật khẩu, mã xác thực và mã khôi phục của tài khoản. Các phiên khác sẽ bị đăng xuất.",
-	"passkey.removePasswordRecommended": "Khuyến nghị: passkey đã đủ để đăng nhập, nên không cần mật khẩu nữa."
+	"passkey.removePasswordRecommended": "Khuyến nghị: passkey đã đủ để đăng nhập, nên không cần mật khẩu nữa.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

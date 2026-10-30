@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "인증 앱과 비밀번호는 한 번에 하나씩 제거됩니다.",
 	"passkey.authenticatorOffNotice": "인증 앱 코드가 꺼졌습니다. 비밀번호는 계속 사용할 수 있습니다.",
 	"passkey.setupRecoveryDescription": "이 패스키는 계정의 비밀번호, 인증 코드와 복구 코드를 대체합니다. 다른 세션은 로그아웃됩니다.",
-	"passkey.removePasswordRecommended": "권장: 패스키만으로 로그인할 수 있으므로 비밀번호는 필요하지 않습니다."
+	"passkey.removePasswordRecommended": "권장: 패스키만으로 로그인할 수 있으므로 비밀번호는 필요하지 않습니다.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }

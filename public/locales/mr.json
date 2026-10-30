@@ -2321,5 +2321,22 @@
 	"passkey.choiceTwoSteps": "ऑथेंटिकेटर अ‍ॅप आणि पासवर्ड एक एक करून काढून टाकले जातील.",
 	"passkey.authenticatorOffNotice": "ऑथेंटिकेटर कोड बंद केले आहेत. तुमचा पासवर्ड अजून चालू आहे.",
 	"passkey.setupRecoveryDescription": "ही पासकी खात्याचा पासवर्ड, ऑथेंटिकेटर कोड आणि रिकव्हरी कोड बदलते. इतर सत्रे बंद होतील.",
-	"passkey.removePasswordRecommended": "शिफारस: पासकी एकट्यानेच साइन इन करून देते, म्हणून आता पासवर्डची गरज नाही."
+	"passkey.removePasswordRecommended": "शिफारस: पासकी एकट्यानेच साइन इन करून देते, म्हणून आता पासवर्डची गरज नाही.",
+	"attachment.risk.ok": "No known risky file type",
+	"attachment.risk.warning": "This file may not be what it seems.",
+	"attachment.risk.blocked": "This file can run code or hide its real type.",
+	"attachment.risk.acknowledge": "I understand the risk and still want to download it",
+	"agent.calendarReview.title": "Calendar change requested by the assistant",
+	"agent.calendarReview.loading": "Loading request…",
+	"agent.calendarReview.loadFailed": "Could not load this request",
+	"agent.calendarReview.deleteIntro": "The assistant wants to delete these events:",
+	"agent.calendarReview.updateIntro": "The assistant wants to change these events:",
+	"agent.calendarReview.repeats": "repeating series",
+	"agent.calendarReview.confirmDelete": "Delete events",
+	"agent.calendarReview.confirmUpdate": "Apply changes",
+	"agent.calendarReview.cancel": "Cancel",
+	"agent.calendarReview.done": "Done. The calendar was updated.",
+	"agent.calendarReview.failed": "The change could not be applied",
+	"agent.review.aiWritten": "This message was written by the AI assistant from email content that anyone could have written. Read it before sending.",
+	"agent.review.unfamiliarRecipients": "You have not written to or saved: {list}. Check that you intend to send this to them."
 }
