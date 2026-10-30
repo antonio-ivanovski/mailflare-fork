@@ -9,9 +9,10 @@ export type SenderCheckBadgeProps = SenderCheckProps & {
 };
 
 export type SenderCheckNoticeProps = SenderCheckProps & {
-	/** Hides the action once the details panel is already open. */
+	/** Whether the details panel is open; drives the chevron and the expanded state. */
 	detailsOpen?: boolean;
-	onViewDetails?: () => void;
+	/** Opens or closes the sender details panel. */
+	onViewDetails: () => void;
 	/** Announce the warning when it appears after authentication loads. */
 	announce?: boolean;
 	className?: string;

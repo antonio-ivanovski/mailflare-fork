@@ -214,7 +214,7 @@ export function ConversationMessageCard({
 					<SenderCheckNotice
 						message={message}
 						detailsOpen={detailsOpen}
-						onViewDetails={() => setDetailsOpen(true)}
+						onViewDetails={() => setDetailsOpen((open) => !open)}
 						className="mb-3 sm:ml-16"
 					/>
 				)}

@@ -296,7 +296,7 @@ export default function MessageDetailPage() {
             <SenderCheckNotice
               message={message}
               detailsOpen={detailsOpen}
-              onViewDetails={() => setDetailsOpen(true)}
+              onViewDetails={() => setDetailsOpen((open) => !open)}
               announce
             />
           </div>
