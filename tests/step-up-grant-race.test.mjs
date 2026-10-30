@@ -1,91 +1,48 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import test, { after } from "node:test";
-import { DatabaseSync } from "node:sqlite";
-import { drizzle } from "drizzle-orm/sqlite-proxy";
-import { build } from "esbuild";
+import { installSqlite, loadFixture } from "./helpers/fixtures.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const temporary = mkdtempSync(join(root, "node_modules", "step-up-grant-race-test-"));
-const mocks = {
-	"@/db": "export function getDb(){return globalThis.grantRace.db}",
-	"@/lib/ids": "let seq=0; export function newId(prefix){return prefix+'-'+(++seq)}",
-	"@/lib/auth/session": "export async function hashSessionToken(token){return 'hash-'+token}",
-};
-await build({
-	entryPoints: [join(root, "src/lib/auth/webauthn/grants.ts")],
-	outfile: join(temporary, "grants.mjs"),
-	bundle: true,
-	platform: "node",
-	format: "esm",
-	packages: "external",
-	alias: { "@": join(root, "src") },
-	logLevel: "silent",
-	plugins: [{ name: "step-up-grant-fixtures", setup(builder) {
-		builder.onResolve({ filter: /.*/ }, ({ path }) => path in mocks ? { path, namespace: "mock" } : undefined);
-		builder.onLoad({ filter: /.*/, namespace: "mock" }, ({ path }) => ({ contents: mocks[path], loader: "js" }));
-	} }],
+const fixture = await loadFixture({
+	name: "step-up-grant-race",
+	entryPoint: "src/lib/auth/webauthn/grants.ts",
+	mocks: {
+		"@/db": "export function getDb(){return globalThis.grantRace.db}",
+		"@/lib/ids": "let seq=0; export function newId(prefix){return prefix+'-'+(++seq)}",
+		"@/lib/auth/session": "export async function hashSessionToken(token){return 'hash-'+token}",
+	},
 });
-const { bumpSecurityVersion, consumeStepUpGrant, createStepUpGrant, peekStepUpGrant, StaleStepUpProofError } = await import(
-	pathToFileURL(join(temporary, "grants.mjs")).href
-);
+const { bumpSecurityVersion, consumeStepUpGrant, createStepUpGrant, peekStepUpGrant, StaleStepUpProofError } = await fixture.import();
 let sqlite;
-after(() => { sqlite?.close(); delete globalThis.grantRace; rmSync(temporary, { recursive: true, force: true }); });
+after(() => { sqlite?.close(); delete globalThis.grantRace; fixture.dispose(); });
 
 function setup() {
 	sqlite?.close();
-	sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(`CREATE TABLE users (id TEXT PRIMARY KEY, security_version INTEGER NOT NULL DEFAULT 0);
-		CREATE TABLE auth_step_ups (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, session_hash TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, purpose TEXT NOT NULL, target_user_id TEXT, security_version INTEGER NOT NULL DEFAULT 0, actor_security_version INTEGER NOT NULL DEFAULT 0, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL);
-		INSERT INTO users VALUES ('admin',0);
-		INSERT INTO users VALUES ('target',0);`);
 	let afterInsert = null;
-	const db = drizzle(async (sql, params, method) => {
-		const query = sqlite.prepare(sql);
-		let rows;
-		if (method === "run") {
-			query.run(...params);
-			rows = [];
-		} else {
-			query.setReturnArrays(true);
-			rows = query.all(...params);
-		}
-		if (afterInsert && /insert\s+into\s+"?auth_step_ups"?/i.test(sql)) {
-			afterInsert();
-			afterInsert = null;
-		}
-		return { rows };
+	sqlite = installSqlite("grantRace", {
+		schema: `CREATE TABLE users (id TEXT PRIMARY KEY, security_version INTEGER NOT NULL DEFAULT 0);
+			CREATE TABLE auth_step_ups (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, session_hash TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, purpose TEXT NOT NULL, target_user_id TEXT, security_version INTEGER NOT NULL DEFAULT 0, actor_security_version INTEGER NOT NULL DEFAULT 0, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL);
+			INSERT INTO users VALUES ('admin',0);
+			INSERT INTO users VALUES ('target',0);`,
+		afterQuery(sql) {
+			if (afterInsert && /insert\s+into\s+"?auth_step_ups"?/i.test(sql)) {
+				afterInsert();
+				afterInsert = null;
+			}
+		},
+		extra: { afterInsert: (hook) => { afterInsert = hook; } },
 	});
-	globalThis.grantRace = {
-		db,
-		sqlite,
-		afterInsert: (hook) => { afterInsert = hook; },
-	};
 }
 
-const adminGrant = (expectedActorSecurityVersion = 0) => createStepUpGrant({}, {
+const grantInput = (overrides = {}) => ({
 	userId: "admin",
 	sessionToken: "session",
 	action: "admin.password_reset",
 	targetUserId: "target",
-	expectedActorSecurityVersion,
+	...overrides,
 });
-const consume = (token) => consumeStepUpGrant({}, {
-	token,
-	userId: "admin",
-	sessionToken: "session",
-	action: "admin.password_reset",
-	targetUserId: "target",
-});
-const peek = (token) => peekStepUpGrant({}, {
-	token,
-	userId: "admin",
-	sessionToken: "session",
-	action: "admin.password_reset",
-	targetUserId: "target",
-});
+const adminGrant = (expectedActorSecurityVersion = 0) => createStepUpGrant({}, grantInput({ expectedActorSecurityVersion }));
+const consume = (token) => consumeStepUpGrant({}, grantInput({ token }));
+const peek = (token) => peekStepUpGrant({}, grantInput({ token }));
 const grants = () => sqlite.prepare("SELECT * FROM auth_step_ups").all();
 
 test("a step-up grant is single use", async () => {

@@ -1,66 +1,36 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import test, { after } from "node:test";
-import { DatabaseSync } from "node:sqlite";
-import { drizzle } from "drizzle-orm/sqlite-proxy";
-import { build } from "esbuild";
+import { concurrentPasswordWrite, installSqlite, loadFixture } from "./helpers/fixtures.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const temporary = mkdtempSync(join(root, "node_modules", "password-reset-race-test-"));
-const mocks = {
-	"@/db": "export function getDb(){return globalThis.resetRace.db}",
-	"@/lib/ids": "export function newId(prefix){return prefix+'-id'}",
-	"@/lib/auth/session": "export async function hashSessionToken(token){return 'hash-'+token} export async function deleteUserSessions(){globalThis.resetRace.sessions++}",
-	"@/lib/auth/password": "export function hasPasswordHash(value){return !!value && value!=='!passkey-only'} export function hashPassword(value){return 'hashed-'+value}",
-	"@/lib/branding/service": "export async function getBranding(){return {appName:'Test'}}",
-	"@/lib/email/system-mail": "export async function sendSystemEmail(){return true}",
-	"@/lib/mailboxes/audit": "export async function createAuditLog(){globalThis.resetRace.audits++}",
-	"@/lib/auth/client-ip": "export function getClientIp(){return '127.0.0.1'}",
-	"@/lib/auth/password-reset-utils": "export function buildPasswordResetEmail(){return {subject:'',text:'',html:''}}",
-};
-await build({
-	entryPoints: [join(root, "src/lib/auth/password-reset.ts")],
-	outfile: join(temporary, "password-reset.mjs"),
-	bundle: true,
-	platform: "node",
-	format: "esm",
-	packages: "external",
-	alias: { "@": join(root, "src") },
-	logLevel: "silent",
-	plugins: [{ name: "password-reset-fixtures", setup(builder) {
-		builder.onResolve({ filter: /.*/ }, ({ path }) => path in mocks ? { path, namespace: "mock" } : undefined);
-		builder.onLoad({ filter: /.*/, namespace: "mock" }, ({ path }) => ({ contents: mocks[path], loader: "js" }));
-	} }],
+const fixture = await loadFixture({
+	name: "password-reset-race",
+	entryPoint: "src/lib/auth/password-reset.ts",
+	mocks: {
+		"@/db": "export function getDb(){return globalThis.resetRace.db}",
+		"@/lib/ids": "export function newId(prefix){return prefix+'-id'}",
+		"@/lib/auth/session": "export async function hashSessionToken(token){return 'hash-'+token} export async function deleteUserSessions(){globalThis.resetRace.sessions++}",
+		"@/lib/auth/password": "export function hasPasswordHash(value){return !!value && value!=='!passkey-only'} export function hashPassword(value){return 'hashed-'+value}",
+		"@/lib/branding/service": "export async function getBranding(){return {appName:'Test'}}",
+		"@/lib/email/system-mail": "export async function sendSystemEmail(){return true}",
+		"@/lib/mailboxes/audit": "export async function createAuditLog(){globalThis.resetRace.audits++}",
+		"@/lib/auth/client-ip": "export function getClientIp(){return '127.0.0.1'}",
+		"@/lib/auth/password-reset-utils": "export function buildPasswordResetEmail(){return {subject:'',text:'',html:''}}",
+	},
 });
-const { completePasswordReset } = await import(pathToFileURL(join(temporary, "password-reset.mjs")).href);
+const { completePasswordReset } = await fixture.import();
 let sqlite;
-after(() => { sqlite?.close(); delete globalThis.resetRace; rmSync(temporary, { recursive: true, force: true }); });
+after(() => { sqlite?.close(); delete globalThis.resetRace; fixture.dispose(); });
 
 function setup({ concurrent = "", used = false } = {}) {
 	sqlite?.close();
-	sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(`CREATE TABLE users (id TEXT PRIMARY KEY, password_hash TEXT NOT NULL, security_version INTEGER NOT NULL DEFAULT 0, totp_enabled INTEGER NOT NULL DEFAULT 0, require_second_factor INTEGER NOT NULL DEFAULT 0);
-		CREATE TABLE password_reset_tokens (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, used_at INTEGER);
-		INSERT INTO users VALUES ('user','$2b$12$old',3,0,1);
-		INSERT INTO password_reset_tokens VALUES ('token','user','hash-token',${Math.floor(Date.now() / 1000) + 600},${used ? 1 : "NULL"});`);
-	let pending = concurrent;
-	const db = drizzle(async (sql, params, method) => {
-		if (pending && /update\s+"?users"?/i.test(sql) && /password_hash/i.test(sql)) {
-			sqlite.exec(pending);
-			pending = "";
-		}
-		const query = sqlite.prepare(sql);
-		if (method === "run") { query.run(...params); return { rows: [] }; }
-		query.setReturnArrays(true);
-		return { rows: query.all(...params) };
+	sqlite = installSqlite("resetRace", {
+		schema: `CREATE TABLE users (id TEXT PRIMARY KEY, password_hash TEXT NOT NULL, security_version INTEGER NOT NULL DEFAULT 0, totp_enabled INTEGER NOT NULL DEFAULT 0, require_second_factor INTEGER NOT NULL DEFAULT 0);
+			CREATE TABLE password_reset_tokens (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, used_at INTEGER);
+			INSERT INTO users VALUES ('user','$2b$12$old',3,0,1);
+			INSERT INTO password_reset_tokens VALUES ('token','user','hash-token',${Math.floor(Date.now() / 1000) + 600},${used ? 1 : "NULL"});`,
+		beforeQuery: concurrentPasswordWrite(concurrent),
+		extra: { sessions: 0, audits: 0 },
 	});
-	globalThis.resetRace = {
-		db,
-		sessions: 0,
-		audits: 0,
-	};
 }
 
 const reset = () => completePasswordReset({}, "token", "new-password", new Request("https://mail.test/reset-password"));

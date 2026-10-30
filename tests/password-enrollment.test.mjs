@@ -1,52 +1,36 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import test, { after } from "node:test";
-import { DatabaseSync } from "node:sqlite";
-import { drizzle } from "drizzle-orm/sqlite-proxy";
-import { build } from "esbuild";
+import { loadFixture, sqliteProxy } from "./helpers/fixtures.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const temporary = mkdtempSync(join(root, "node_modules", "password-enrollment-test-"));
-const mocks = {
-	"next/server": "export const NextResponse={json:(data,init)=>Response.json(data,init)};",
-	"@/db": "export function getDb(){return globalThis.passwordTest.db}",
-	"@/lib/cloudflare": "export function getEnv(){return {}}",
-	"@/lib/auth/cookies": "export async function requireUser(){return globalThis.passwordTest.user}",
-	"@/lib/auth/session": "export function getSessionTokenFromRequestHeaders(){return 'session'} export async function deleteUserSessions(){}",
-	"@/lib/auth/password": "export const PASSWORDLESS_PASSWORD_HASH='!passkey-only'; export function hasPasswordHash(value){return value!=='!passkey-only'} export function hashPassword(value){return 'hashed-'+value} export function verifyPassword(){return false}",
-	"@/lib/auth/webauthn/grants": "export async function consumeStepUpGrant(){return globalThis.passwordTest.consume()} export async function bumpSecurityVersion(){globalThis.passwordTest.sqlite.exec('UPDATE users SET security_version=security_version+1')}",
-	"@/lib/auth/webauthn/credentials": "export async function countPasskeys(){return 1}",
-	"@/lib/auth/activity": "export async function recordAuthActivity(){}",
-	"./utils": "export async function parseChangePasswordRequest(){throw new Error('Unused')}",
-};
-await build({
-	entryPoints: [join(root, "src/app/api/settings/password/route.ts")],
-	outfile: join(temporary, "route.mjs"), bundle: true, platform: "node", format: "esm", packages: "external",
-	alias: { "@": join(root, "src") }, logLevel: "silent",
-	plugins: [{ name: "password-fixtures", setup(builder) {
-		builder.onResolve({ filter: /.*/ }, ({ path }) => path in mocks ? { path, namespace: "mock" } : undefined);
-		builder.onLoad({ filter: /.*/, namespace: "mock" }, ({ path }) => ({ contents: mocks[path], loader: "js" }));
-	} }],
+const fixture = await loadFixture({
+	name: "password-enrollment",
+	entryPoint: "src/app/api/settings/password/route.ts",
+	mocks: {
+		"next/server": "export const NextResponse={json:(data,init)=>Response.json(data,init)};",
+		"@/db": "export function getDb(){return globalThis.passwordTest.db}",
+		"@/lib/cloudflare": "export function getEnv(){return {}}",
+		"@/lib/auth/cookies": "export async function requireUser(){return globalThis.passwordTest.user}",
+		"@/lib/auth/session": "export function getSessionTokenFromRequestHeaders(){return 'session'} export async function deleteUserSessions(){}",
+		"@/lib/auth/password": "export const PASSWORDLESS_PASSWORD_HASH='!passkey-only'; export function hasPasswordHash(value){return value!=='!passkey-only'} export function hashPassword(value){return 'hashed-'+value} export function verifyPassword(){return false}",
+		"@/lib/auth/webauthn/grants": "export async function consumeStepUpGrant(){return globalThis.passwordTest.consume()} export async function bumpSecurityVersion(){globalThis.passwordTest.sqlite.exec('UPDATE users SET security_version=security_version+1')}",
+		"@/lib/auth/webauthn/credentials": "export async function countPasskeys(){return 1}",
+		"@/lib/auth/activity": "export async function recordAuthActivity(){}",
+		"./utils": "export async function parseChangePasswordRequest(){throw new Error('Unused')}",
+	},
 });
-const { POST } = await import(pathToFileURL(join(temporary, "route.mjs")).href);
+const { POST } = await fixture.import();
 let sqlite;
-after(() => { sqlite?.close(); delete globalThis.passwordTest; rmSync(temporary, { recursive: true, force: true }); });
+after(() => { sqlite?.close(); delete globalThis.passwordTest; fixture.dispose(); });
 
 function setup({ policy = false, concurrent = "", authorized = true } = {}) {
 	sqlite?.close();
-	sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(`CREATE TABLE users (id TEXT, password_hash TEXT, security_version INTEGER, totp_enabled INTEGER, require_second_factor INTEGER, passkey_count INTEGER);
-		INSERT INTO users VALUES ('user','!passkey-only',0,0,${policy ? 1 : 0},1)`);
-	const db = drizzle(async (sql, params, method) => {
-		const query = sqlite.prepare(sql);
-		if (method === "run") { query.run(...params); return { rows: [] }; }
-		query.setReturnArrays(true);
-		return { rows: query.all(...params) };
+	const proxy = sqliteProxy({
+		schema: `CREATE TABLE users (id TEXT, password_hash TEXT, security_version INTEGER, totp_enabled INTEGER, require_second_factor INTEGER, passkey_count INTEGER);
+			INSERT INTO users VALUES ('user','!passkey-only',0,0,${policy ? 1 : 0},1)`,
 	});
+	sqlite = proxy.sqlite;
 	globalThis.passwordTest = {
-		db, sqlite,
+		db: proxy.db, sqlite,
 		user: { id: "user", passwordHash: "!passkey-only", securityVersion: 0, totpEnabled: false, requireSecondFactor: policy },
 		consume: () => { if (concurrent) sqlite.exec(concurrent); return authorized; },
 	};
