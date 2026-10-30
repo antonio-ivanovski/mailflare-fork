@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Potwierdź, że to Ty, a następnie utwórz klucz dostępu. Nadanie nazwy jest opcjonalne.",
 	"passkey.removeTitle": "Usunąć ten klucz dostępu?",
 	"passkey.removeDescription": "Klucz „{name}” przestanie działać przy logowaniu.",
+	"passkey.removeLastSecondFactorWarning": "Usunięcie ostatniego klucza dostępu wyłączy też weryfikację dwuetapową. Będziesz logować się tylko hasłem.",
 	"passkey.verifyTitle": "Potwierdź, że to Ty",
 	"passkey.verifyDescription": "Potwierdź hasło lub użyj klucza dostępu, aby kontynuować.",
 	"passkey.verifyFailed": "Weryfikacja nie powiodła się",

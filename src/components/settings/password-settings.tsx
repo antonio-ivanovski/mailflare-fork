@@ -173,15 +173,21 @@ export function PasswordSettings() {
 						<DialogDescription>{t("passkey.removePasswordDescription")}</DialogDescription>
 					</DialogHeader>
 					<p className="mb-4 text-sm leading-6 text-neutral-500">{t("passkey.lostAllHint")}</p>
-					<Button
-						variant="destructive"
-						onClick={() => {
-							setConfirmRemove(false);
-							setPending("remove");
-						}}
-					>
-						{t("passkey.removePassword")}
-					</Button>
+					<div className="flex justify-end gap-2">
+						<Button type="button" variant="outline" onClick={() => setConfirmRemove(false)}>
+							{t("common.cancel")}
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={() => {
+								setConfirmRemove(false);
+								setPending("remove");
+							}}
+						>
+							{t("passkey.removePassword")}
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 

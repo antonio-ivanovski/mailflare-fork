@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Utathibitisha kwa nenosiri lako au ufunguo uliopo, kisha utengeneze mpya.",
 	"passkey.removeTitle": "Ondoa ufunguo huu wa kuingia?",
 	"passkey.removeDescription": "\"{name}\" hautafanya kazi tena kwa kuingia.",
+	"passkey.removeLastSecondFactorWarning": "Uking'oa ufunguo wako wa mwisho wa kuingia, uthibitishaji wa hatua mbili pia utazimwa. Utaingia kwa nenosiri lako pekee.",
 	"passkey.verifyTitle": "Thibitisha kuwa ni wewe",
 	"passkey.verifyDescription": "Kwa mabadiliko haya ya usalama, thibitisha tena mara moja.",
 	"passkey.verifyFailed": "Uthibitishaji umeshindwa",

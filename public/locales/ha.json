@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Za ka tabbatar da kalmar sirrinka ko maɓallin shiga da ke akwai, sannan ka ƙirƙiri sabon.",
 	"passkey.removeTitle": "Cire wannan maɓallin shiga?",
 	"passkey.removeDescription": "\"{name}\" ba zai ƙara aiki don shiga ba.",
+	"passkey.removeLastSecondFactorWarning": "Cire maɓallin shigarka na ƙarshe zai kuma kashe tabbatarwa mataki biyu. Za ka shiga da kalmar sirrinka kaɗai.",
 	"passkey.verifyTitle": "Tabbatar da cewa kai ne",
 	"passkey.verifyDescription": "Don wannan canjin tsaro, sake tabbatarwa sau ɗaya.",
 	"passkey.verifyFailed": "Tabbatarwa ta gaza",

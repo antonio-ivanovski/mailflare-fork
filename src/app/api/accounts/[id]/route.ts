@@ -8,7 +8,7 @@ import { getAccountSeatError } from "@/lib/licenses/seats";
 import { getLicenseEntitlements } from "@/lib/licenses/service";
 import { canManageUserAccount, canManageUsers, isPrimaryAdmin } from "@/lib/auth/admin";
 import type { AccountRouteParams } from "./types";
-import { PasskeyOnlyPasswordError, selectAccountById, updateAccountCredentials } from "./utils";
+import { AccountSecurityChangedError, PasskeyOnlyPasswordError, selectAccountById, updateAccountCredentials } from "./utils";
 import { deleteUserSessions, getSessionTokenFromRequestHeaders } from "@/lib/auth/session";
 import { hasPasswordHash } from "@/lib/auth/password";
 import { consumeStepUpGrant } from "@/lib/auth/webauthn/grants";
@@ -102,6 +102,9 @@ export async function PATCH(request: Request, { params }: AccountRouteParams) {
 	} catch (error) {
 		if (error instanceof PasskeyOnlyPasswordError) {
 			return authError("passkey_only_password", 409);
+		}
+		if (error instanceof AccountSecurityChangedError) {
+			return authError("action_conflict", 409);
 		}
 		throw error;
 	}

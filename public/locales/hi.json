@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "पुष्टि करें कि यह आप हैं, फिर पासकी बनाएँ। इसका नाम देना वैकल्पिक है।",
 	"passkey.removeTitle": "यह पासकी हटाएँ?",
 	"passkey.removeDescription": "“{name}” साइन इन के लिए काम करना बंद कर देगी।",
+	"passkey.removeLastSecondFactorWarning": "आपकी अंतिम पासकी हटाने से दो-चरणीय प्रमाणीकरण भी बंद हो जाएगा। आप केवल पासवर्ड से साइन इन करेंगे।",
 	"passkey.verifyTitle": "पुष्टि करें कि यह आप हैं",
 	"passkey.verifyDescription": "जारी रखने के लिए अपने पासवर्ड की पुष्टि करें या पासकी का उपयोग करें।",
 	"passkey.verifyFailed": "सत्यापन विफल रहा",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "ਪੁਸ਼ਟੀ ਕਰੋ ਕਿ ਇਹ ਤੁਸੀਂ ਹੀ ਹੋ, ਫਿਰ ਪਾਸਕੀ ਬਣਾਓ। ਨਾਮ ਦੇਣਾ ਚੋਣਵਾਂ ਹੈ।",
 	"passkey.removeTitle": "ਇਹ ਪਾਸਕੀ ਹਟਾਉਣੀ ਹੈ?",
 	"passkey.removeDescription": "\"{name}\" ਸਾਈਨ ਇਨ ਲਈ ਕੰਮ ਕਰਨਾ ਬੰਦ ਕਰ ਦੇਵੇਗੀ।",
+	"passkey.removeLastSecondFactorWarning": "ਤੁਹਾਡੀ ਆਖਰੀ ਪਾਸਕੀ ਹਟਾਉਣ ਨਾਲ ਦੋ-ਕਾਰਕ ਪ੍ਰਮਾਣਿਕਤਾ ਵੀ ਬੰਦ ਹੋ ਜਾਵੇਗੀ। ਤੁਸੀਂ ਸਿਰਫ਼ ਪਾਸਵਰਡ ਨਾਲ ਸਾਈਨ ਇਨ ਕਰੋਗੇ।",
 	"passkey.verifyTitle": "ਪੁਸ਼ਟੀ ਕਰੋ ਕਿ ਇਹ ਤੁਸੀਂ ਹੀ ਹੋ",
 	"passkey.verifyDescription": "ਜਾਰੀ ਰੱਖਣ ਲਈ ਆਪਣੇ ਪਾਸਵਰਡ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ ਜਾਂ ਪਾਸਕੀ ਵਰਤੋ।",
 	"passkey.verifyFailed": "ਤਸਦੀਕ ਅਸਫਲ ਰਿਹਾ",

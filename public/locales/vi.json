@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Xác nhận đó là bạn, rồi tạo passkey. Việc đặt tên là không bắt buộc.",
 	"passkey.removeTitle": "Xóa passkey này?",
 	"passkey.removeDescription": "\"{name}\" sẽ không còn dùng được để đăng nhập nữa.",
+	"passkey.removeLastSecondFactorWarning": "Xóa passkey cuối cùng của bạn cũng sẽ tắt xác thực hai bước. Bạn sẽ chỉ đăng nhập bằng mật khẩu.",
 	"passkey.verifyTitle": "Xác nhận đó là bạn",
 	"passkey.verifyDescription": "Xác nhận mật khẩu của bạn hoặc dùng passkey để tiếp tục.",
 	"passkey.verifyFailed": "Xác minh thất bại",

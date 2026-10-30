@@ -951,6 +951,8 @@ export const authStepUps = sqliteTable(
 		targetUserId: text("target_user_id"),
 		/** The target account's security_version at the time the grant was issued. */
 		securityVersion: integer("security_version").notNull().default(0),
+		/** The acting account's security_version at the time the grant was issued. */
+		actorSecurityVersion: integer("actor_security_version").notNull().default(0),
 		expiresAt: timestamp("expires_at").notNull(),
 		usedAt: timestamp("used_at"),
 		createdAt: timestamp("created_at")

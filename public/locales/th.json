@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "ยืนยันว่าเป็นคุณ แล้วสร้างพาสคีย์ การตั้งชื่อเป็นทางเลือก",
 	"passkey.removeTitle": "ลบพาสคีย์นี้หรือไม่",
 	"passkey.removeDescription": "\"{name}\" จะใช้ลงชื่อเข้าใช้ไม่ได้อีก",
+	"passkey.removeLastSecondFactorWarning": "การลบพาสคีย์สุดท้ายของคุณจะปิดการยืนยันสองขั้นตอนด้วย คุณจะลงชื่อเข้าใช้ด้วยรหัสผ่านเท่านั้น",
 	"passkey.verifyTitle": "ยืนยันว่าเป็นคุณ",
 	"passkey.verifyDescription": "ยืนยันรหัสผ่านหรือใช้พาสคีย์เพื่อดำเนินการต่อ",
 	"passkey.verifyFailed": "การยืนยันไม่สำเร็จ",

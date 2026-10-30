@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "تأیید کنید که خودتان هستید، سپس کلید عبور را بسازید. نام‌گذاری آن اختیاری است.",
 	"passkey.removeTitle": "این کلید عبور حذف شود؟",
 	"passkey.removeDescription": "«{name}» دیگر برای ورود کار نخواهد کرد.",
+	"passkey.removeLastSecondFactorWarning": "حذف آخرین کلید عبور شما احراز هویت دومرحله‌ای را هم خاموش می‌کند. فقط با گذرواژه خود وارد می‌شوید.",
 	"passkey.verifyTitle": "تأیید کنید که خودتان هستید",
 	"passkey.verifyDescription": "برای ادامه گذرواژه خود را تأیید کنید یا از کلید عبور استفاده کنید.",
 	"passkey.verifyFailed": "تأیید ناموفق بود",

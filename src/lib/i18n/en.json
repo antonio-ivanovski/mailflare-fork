@@ -2245,6 +2245,7 @@
 	"passkey.addDescription": "Confirm it is you, then create the passkey. Naming it is optional.",
 	"passkey.removeTitle": "Remove this passkey?",
 	"passkey.removeDescription": "\"{name}\" will stop working for sign-in.",
+	"passkey.removeLastSecondFactorWarning": "Removing your last passkey will also turn off two-step verification. You’ll sign in with your password only.",
 	"passkey.verifyTitle": "Confirm it is you",
 	"passkey.verifyDescription": "Confirm your password or use a passkey to continue.",
 	"passkey.verifyFailed": "Verification failed",

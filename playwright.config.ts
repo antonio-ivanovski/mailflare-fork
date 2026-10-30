@@ -14,9 +14,10 @@ export default defineConfig({
 	webServer: process.env.PLAYWRIGHT_BASE_URL
 		? undefined
 		: {
-				command: "npm run dev",
+				command: "npm run dev -- --strictPort",
 				url: "http://localhost:3000/login",
-				reuseExistingServer: true,
+				// Use PLAYWRIGHT_BASE_URL explicitly when targeting an existing dev server.
+				reuseExistingServer: false,
 				timeout: 180_000,
 			},
 });

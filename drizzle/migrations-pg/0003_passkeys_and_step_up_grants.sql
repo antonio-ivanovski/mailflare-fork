@@ -56,6 +56,7 @@ CREATE TABLE "auth_step_ups" (
 	"purpose" text NOT NULL,
 	"target_user_id" text,
 	"security_version" bigint DEFAULT 0 NOT NULL,
+	"actor_security_version" bigint DEFAULT 0 NOT NULL,
 	"expires_at" bigint NOT NULL,
 	"used_at" bigint,
 	"created_at" bigint NOT NULL,
@@ -80,15 +81,14 @@ FOR EACH ROW EXECUTE FUNCTION mailflare_passkey_count_insert();--> statement-bre
 CREATE FUNCTION mailflare_passkey_count_delete() RETURNS trigger AS $$
 BEGIN
 	UPDATE users SET passkey_count = passkey_count - 1 WHERE id = OLD.user_id;
+	UPDATE users SET require_second_factor = false
+	WHERE id = OLD.user_id
+		AND passkey_count = 0
+		AND NOT totp_enabled
+		AND deleted_at IS NULL;
 	IF (SELECT passkey_count FROM users WHERE id = OLD.user_id) = 0
 		AND (SELECT deleted_at FROM users WHERE id = OLD.user_id) IS NULL
-		AND (
-			(SELECT password_hash FROM users WHERE id = OLD.user_id) = '!passkey-only'
-			OR (
-				(SELECT require_second_factor FROM users WHERE id = OLD.user_id)
-				AND NOT (SELECT totp_enabled FROM users WHERE id = OLD.user_id)
-			)
-		) THEN
+		AND (SELECT password_hash FROM users WHERE id = OLD.user_id) = '!passkey-only' THEN
 		RAISE EXCEPTION 'last-auth-method';
 	END IF;
 	RETURN OLD;

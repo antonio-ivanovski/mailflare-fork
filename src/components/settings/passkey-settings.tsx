@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser";
-import { CheckCircle2, KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
+import { AlertTriangle, CheckCircle2, KeyRound, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -152,8 +152,10 @@ export function PasskeySettings() {
 
 	if (!status) return <p role={loadFailed ? "alert" : undefined} className="text-sm text-neutral-500">{loadFailed ? t("passkey.loadFailed") : t("mfa.loading")}</p>;
 
-	const otherSignInMethod = status.passwordSet && (!status.requireSecondFactor || status.totpEnabled);
-	const canRemove = status.passkeys.length > 1 || otherSignInMethod;
+	// Password accounts can fall back to password sign-in; passkey-only accounts cannot.
+	const canRemove = status.passkeys.length > 1 || status.passwordSet;
+	const warnsLastSecondFactor =
+		status.passkeys.length === 1 && status.passwordSet && status.requireSecondFactor && !status.totpEnabled;
 	const checkedPasskey = checkedId ? status.passkeys.find((passkey) => passkey.id === checkedId) ?? null : null;
 
 	const policy = pending?.type === "policy" ? pending : null;
@@ -317,17 +319,32 @@ export function PasskeySettings() {
 						<DialogTitle>{t("passkey.removeTitle")}</DialogTitle>
 						<DialogDescription>{t("passkey.removeDescription", { name: confirmRemove?.name ?? "" })}</DialogDescription>
 					</DialogHeader>
-					<Button
-						variant="destructive"
-						onClick={() => {
-							if (!confirmRemove) return;
-							const action = confirmRemove;
-							setConfirmRemove(null);
-							setPending({ type: "remove", ...action });
-						}}
-					>
-						{t("passkey.remove")}
-					</Button>
+					{warnsLastSecondFactor && (
+						<p
+							role="alert"
+							className="mb-4 flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-800"
+						>
+							<AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+							<span className="min-w-0">{t("passkey.removeLastSecondFactorWarning")}</span>
+						</p>
+					)}
+					<div className="flex justify-end gap-2">
+						<Button type="button" variant="outline" onClick={() => setConfirmRemove(null)}>
+							{t("common.cancel")}
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={() => {
+								if (!confirmRemove) return;
+								const action = confirmRemove;
+								setConfirmRemove(null);
+								setPending({ type: "remove", ...action });
+							}}
+						>
+							{t("passkey.remove")}
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 

@@ -37,9 +37,8 @@ export async function DELETE(request: Request, { params }: Params) {
 
 	const count = await countPasskeys(env, auth.user.id);
 	const passwordless = !hasPasswordHash(auth.user.passwordHash);
-	const lastFactorRequired = auth.user.requireSecondFactor && !auth.user.totpEnabled;
 	// Friendly pre-check; the database trigger remains the final guard.
-	if (count <= 1 && (passwordless || lastFactorRequired)) return authError("last_method", 409);
+	if (count <= 1 && passwordless) return authError("last_method", 409);
 
 	if (!(await consumeStepUpGrant(env, {
 		token: parsed.data.stepUpToken,

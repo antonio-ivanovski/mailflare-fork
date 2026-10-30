@@ -1280,6 +1280,14 @@
           "autoincrement": false,
           "default": 0
         },
+        "actor_security_version": {
+          "name": "actor_security_version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "expires_at": {
           "name": "expires_at",
           "type": "bigint",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "ಇದು ನೀವೇ ಎಂದು ದೃಢೀಕರಿಸಿ, ನಂತರ ಪಾಸ್‌ಕಿ ರಚಿಸಿ. ಹೆಸರು ನೀಡುವುದು ಐಚ್ಛಿಕ.",
 	"passkey.removeTitle": "ಈ ಪಾಸ್‌ಕಿ ತೆಗೆದುಹಾಕಬೇಕೇ?",
 	"passkey.removeDescription": "\"{name}\" ಸೈನ್ ಇನ್‌ಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.",
+	"passkey.removeLastSecondFactorWarning": "ನಿಮ್ಮ ಕೊನೆಯ ಪಾಸ್‌ಕಿ ತೆಗೆದುಹಾಕಿದರೆ ಎರಡು-ಹಂತದ ದೃಢೀಕರಣವೂ ಆಫ್ ಆಗುತ್ತದೆ. ನೀವು ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಮಾತ್ರ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ.",
 	"passkey.verifyTitle": "ಇದು ನೀವೇ ಎಂದು ದೃಢೀಕರಿಸಿ",
 	"passkey.verifyDescription": "ಮುಂದುವರಿಯಲು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ ಅಥವಾ ಪಾಸ್‌ಕಿ ಬಳಸಿ.",
 	"passkey.verifyFailed": "ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ",

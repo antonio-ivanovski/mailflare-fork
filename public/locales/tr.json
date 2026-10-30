@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Bunun siz olduğunuzu onaylayın, ardından geçiş anahtarını oluşturun. Ad vermek isteğe bağlıdır.",
 	"passkey.removeTitle": "Bu geçiş anahtarı kaldırılsın mı?",
 	"passkey.removeDescription": "\"{name}\" artık oturum açma için çalışmayacak.",
+	"passkey.removeLastSecondFactorWarning": "Son geçiş anahtarınızı kaldırmak iki adımlı doğrulamayı da kapatır. Yalnızca parolanızla oturum açacaksınız.",
 	"passkey.verifyTitle": "Bunun siz olduğunuzu onaylayın",
 	"passkey.verifyDescription": "Devam etmek için parolanızı onaylayın veya geçiş anahtarı kullanın.",
 	"passkey.verifyFailed": "Doğrulama başarısız oldu",

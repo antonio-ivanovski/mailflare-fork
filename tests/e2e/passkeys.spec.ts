@@ -7,6 +7,18 @@ let authenticatorId = "";
 /** The authenticator secret of the running enrollment, used to sign a code. */
 let totpSecret = "";
 
+test("passkey setup explains when the browser is unsupported", async ({ page }) => {
+	await page.addInitScript(() => {
+		Object.defineProperty(window, "PublicKeyCredential", { value: undefined, configurable: true });
+	});
+	await page.route("**/api/auth/passkey/setup/context?*", (route) => route.fulfill({
+		json: { email: EMAIL, kind: "setup" },
+	}));
+	await page.goto("/setup/passkey?token=unsupported-browser-test");
+	await page.getByRole("button", { name: "Create passkey", exact: true }).click();
+	await expect(page.getByRole("alert")).toHaveText("This browser does not support passkeys");
+});
+
 async function enableVirtualAuthenticator(page: Page): Promise<string> {
 	const client = await page.context().newCDPSession(page);
 	await client.send("WebAuthn.enable");
@@ -363,6 +375,85 @@ test("adding a password chooses its second-factor policy with one passkey scan",
 	expect(saves).toBe(2);
 	await logout(page);
 	await loginWithPassword(page);
+});
+
+test("removing the last passkey warns and disables its second-factor requirement", async ({ page, request }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.16");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await addFirstPasskey(page, "Use a passkey as your second factor");
+	await completeStepUp(page, { title: "Require a second step after password sign-in" });
+	const toggle = page.getByRole("switch", { name: "Require a second step after password sign-in" });
+	await expect(toggle).toHaveAttribute("aria-checked", "true");
+	await page.getByRole("button", { name: "Remove Playwright passkey", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Remove this passkey?" });
+	await expect(dialog.getByText("Removing your last passkey will also turn off two-step verification. You’ll sign in with your password only.")).toBeVisible();
+	const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+	await expect(cancel).toBeFocused();
+	const cancelBounds = await cancel.boundingBox();
+	const removeBounds = await dialog.getByRole("button", { name: "Remove", exact: true }).boundingBox();
+	if (!cancelBounds || !removeBounds) throw new Error("Removal dialog buttons have no bounds");
+	expect(removeBounds.x).toBeGreaterThan(cancelBounds.x + cancelBounds.width);
+	expect(Math.abs(removeBounds.y - cancelBounds.y)).toBeLessThan(2);
+	await cancel.click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByText("Playwright passkey", { exact: true })).toBeVisible();
+	await expect(toggle).toHaveAttribute("aria-checked", "true");
+	await page.getByRole("button", { name: "Remove Playwright passkey", exact: true }).click();
+	const sessionToken = await page.evaluate(() => localStorage.getItem("mailflare-session-token"));
+	const passkeysResponse = await request.get("/api/settings/security", {
+		headers: { Authorization: `Bearer ${sessionToken}` },
+	});
+	expect(passkeysResponse.ok()).toBe(true);
+	const security = await passkeysResponse.json();
+	const unverified = await request.delete(`/api/settings/passkeys/${security.passkeys[0].id}`, {
+		headers: { Authorization: `Bearer ${sessionToken}` },
+		data: { stepUpToken: "invalid-proof" },
+	});
+	expect(unverified.status()).toBe(401);
+	const unchanged = await request.get("/api/settings/security", {
+		headers: { Authorization: `Bearer ${sessionToken}` },
+	});
+	const unchangedSecurity = await unchanged.json();
+	expect(unchangedSecurity.requireSecondFactor).toBe(true);
+	expect(unchangedSecurity.passkeys).toHaveLength(1);
+	await dialog.getByRole("button", { name: "Remove", exact: true }).click();
+	await completeStepUp(page);
+	await expect(page.getByText("Playwright passkey", { exact: true })).toHaveCount(0);
+	await expect(toggle).toHaveAttribute("aria-checked", "false");
+	await logout(page);
+	await loginWithPassword(page);
+});
+
+test("removing the last passkey preserves authenticator two-step verification", async ({ page, request }) => {
+	test.setTimeout(180_000);
+	await request.post("/api/seed?reset=1");
+	await isolateRateLimit(page, "203.0.113.17");
+	await enableVirtualAuthenticator(page);
+	await setPresence(page, false);
+	await loginWithPassword(page);
+	await page.goto("/settings/security");
+	await enrollAuthenticator(page);
+	await addFirstPasskey(page, "Keep my current sign-in");
+	await page.getByRole("button", { name: "Remove Playwright passkey", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Remove this passkey?" });
+	await expect(dialog.getByText("Removing your last passkey", { exact: false })).toHaveCount(0);
+	await dialog.getByRole("button", { name: "Remove", exact: true }).click();
+	await completeStepUp(page);
+	await expect(page.getByText("Playwright passkey", { exact: true })).toHaveCount(0);
+	await expect(page.getByRole("switch", { name: "Require a second step after password sign-in" })).toHaveAttribute("aria-checked", "true");
+	await logout(page);
+	await page.getByLabel("Email").fill(EMAIL);
+	await page.getByLabel("Password").fill(PASSWORD);
+	await page.getByRole("button", { name: "Sign in", exact: true }).click();
+	await page.getByLabel("Authenticator code or recovery code", { exact: true }).fill(totpCode(totpSecret));
+	await page.getByRole("button", { name: "Verify", exact: true }).click();
+	await page.waitForURL("**/inbox", { timeout: 30_000 });
 });
 
 test("first passkey removes the password and the authenticator codes together", async ({ page, request }) => {

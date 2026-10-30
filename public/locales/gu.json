@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "પુષ્ટિ કરો કે આ તમે જ છો, પછી પાસકી બનાવો. તેનું નામ આપવું વૈકલ્પિક છે.",
 	"passkey.removeTitle": "આ પાસકી દૂર કરવી છે?",
 	"passkey.removeDescription": "“{name}” સાઇન ઇન માટે કામ કરશે નહીં.",
+	"passkey.removeLastSecondFactorWarning": "તમારી છેલ્લી પાસકી દૂર કરવાથી દ્વિ-પરિબળ પ્રમાણીકરણ પણ બંધ થશે. તમે ફક્ત પાસવર્ડથી સાઇન ઇન કરશો.",
 	"passkey.verifyTitle": "પુષ્ટિ કરો કે આ તમે જ છો",
 	"passkey.verifyDescription": "ચાલુ રાખવા તમારા પાસવર્ડની પુષ્ટિ કરો અથવા પાસકી વાપરો.",
 	"passkey.verifyFailed": "ચકાસણી નિષ્ફળ",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "নিশ্চিত করুন যে এটি আপনি, তারপর পাসকি তৈরি করুন। নাম দেওয়া ঐচ্ছিক।",
 	"passkey.removeTitle": "এই পাসকি সরাবেন?",
 	"passkey.removeDescription": "“{name}” সাইন ইনে আর কাজ করবে না।",
+	"passkey.removeLastSecondFactorWarning": "আপনার শেষ পাসকি সরালে দ্বি-স্তরীয় যাচাইকরণও বন্ধ হয়ে যাবে। আপনি শুধু পাসওয়ার্ড দিয়েই সাইন ইন করবেন।",
 	"passkey.verifyTitle": "নিশ্চিত করুন যে এটি আপনি",
 	"passkey.verifyDescription": "চালিয়ে যেতে আপনার পাসওয়ার্ড নিশ্চিত করুন বা পাসকি ব্যবহার করুন।",
 	"passkey.verifyFailed": "যাচাই ব্যর্থ হয়েছে",

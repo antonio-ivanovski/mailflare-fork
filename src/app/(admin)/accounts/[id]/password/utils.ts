@@ -2,8 +2,7 @@ import { defaultTranslator } from "@/lib/i18n/utils";
 import { saveManagedAccount } from "../utils";
 import type { PasswordSaveOptions } from "./types";
 
-export async function saveAccountPassword({ event, account, password, stepUpToken, setPassword, setSaving, setMessage, t = defaultTranslator }: PasswordSaveOptions) {
-	event?.preventDefault();
+export async function saveAccountPassword({ account, password, stepUpToken, setPassword, setSaving, setMessage, t = defaultTranslator }: PasswordSaveOptions) {
 	if (!account) return;
 	setSaving(true);
 	setMessage(null);

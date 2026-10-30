@@ -115,5 +115,3 @@ export async function deletePasskey(env: CloudflareEnv, userId: string, id: stri
 		.returning({ id: passkeyCredentials.id });
 	return rows.length > 0;
 }
-
-

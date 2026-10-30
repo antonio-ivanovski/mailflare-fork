@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "أكّد أنك أنت، ثم أنشئ مفتاح المرور. تسميته اختيارية.",
 	"passkey.removeTitle": "إزالة مفتاح المرور هذا؟",
 	"passkey.removeDescription": "سيتوقف “{name}” عن العمل لتسجيل الدخول.",
+	"passkey.removeLastSecondFactorWarning": "ستؤدي إزالة آخر مفتاح مرور إلى إيقاف المصادقة الثنائية أيضًا. وستسجّل الدخول بكلمة المرور فقط.",
 	"passkey.verifyTitle": "أكّد أنك أنت",
 	"passkey.verifyDescription": "أكّد كلمة مرورك أو استخدم مفتاح مرور للمتابعة.",
 	"passkey.verifyFailed": "فشل التحقق",

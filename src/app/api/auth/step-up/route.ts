@@ -6,7 +6,7 @@ import { passkeyStepUpSchema } from "@/lib/validators";
 import { verifyPassword } from "@/lib/auth/password";
 import { allowLoginAttempt } from "@/lib/auth/rate-limit";
 import { getSessionTokenFromRequestHeaders } from "@/lib/auth/session";
-import { createStepUpGrant } from "@/lib/auth/webauthn/grants";
+import { createStepUpGrant, StaleStepUpProofError } from "@/lib/auth/webauthn/grants";
 import { verifySecondFactor } from "@/lib/auth/mfa";
 import { authError } from "@/lib/http/auth-error";
 
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
 	const env = getEnv();
 	const auth = await requireSessionUser(env, request);
 	if (auth.error) return authError("session_expired", 401);
+	const expectedActorSecurityVersion = auth.user.securityVersion;
 	if (!(await allowLoginAttempt(env, request))) {
 		return authError("rate_limited", 429, { "Retry-After": "60" });
 	}
@@ -41,10 +42,17 @@ export async function POST(request: Request) {
 	if (!token) return authError("session_expired", 401);
 	try {
 		return NextResponse.json(
-			{ stepUpToken: await createStepUpGrant(env, { userId: auth.user.id, sessionToken: token, action, targetUserId }) },
+			{ stepUpToken: await createStepUpGrant(env, {
+				userId: auth.user.id,
+				sessionToken: token,
+				action,
+				targetUserId,
+				expectedActorSecurityVersion,
+			}) },
 			{ headers: { "Cache-Control": "no-store" } },
 		);
-	} catch {
+	} catch (error) {
+		if (error instanceof StaleStepUpProofError) return authError("verification_required", 409);
 		return authError("invalid_request", 400);
 	}
 }

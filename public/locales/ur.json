@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "تصدیق کریں کہ یہ آپ ہی ہیں، پھر پاس کی بنائیں۔ اس کا نام دینا اختیاری ہے۔",
 	"passkey.removeTitle": "یہ پاس کی ہٹائیں؟",
 	"passkey.removeDescription": "“{name}” سائن ان کے لیے کام کرنا بند کر دے گا۔",
+	"passkey.removeLastSecondFactorWarning": "آپ کی آخری پاس کی ہٹانے سے دو مرحلہ توثیق بھی بند ہو جائے گی۔ آپ صرف پاس ورڈ سے سائن ان کریں گے۔",
 	"passkey.verifyTitle": "تصدیق کریں کہ یہ آپ ہی ہیں",
 	"passkey.verifyDescription": "جاری رکھنے کے لیے اپنا پاس ورڈ تصدیق کریں یا پاس کی استعمال کریں۔",
 	"passkey.verifyFailed": "تصدیق ناکام رہی",

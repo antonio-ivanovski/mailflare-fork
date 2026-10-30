@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Bevestig dat jij het bent en maak daarna de passkey aan. Een naam geven is optioneel.",
 	"passkey.removeTitle": "Deze passkey verwijderen?",
 	"passkey.removeDescription": "“{name}” werkt daarna niet meer voor het inloggen.",
+	"passkey.removeLastSecondFactorWarning": "Als je je laatste passkey verwijdert, wordt tweestapsverificatie ook uitgeschakeld. Je logt dan alleen nog in met je wachtwoord.",
 	"passkey.verifyTitle": "Bevestig dat jij het bent",
 	"passkey.verifyDescription": "Bevestig je wachtwoord of gebruik een passkey om door te gaan.",
 	"passkey.verifyFailed": "Verificatie mislukt",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Konfirmasikan bahwa ini Anda, lalu buat passkey. Memberi nama bersifat opsional.",
 	"passkey.removeTitle": "Hapus passkey ini?",
 	"passkey.removeDescription": "\"{name}\" tidak akan berfungsi lagi untuk masuk.",
+	"passkey.removeLastSecondFactorWarning": "Menghapus passkey terakhir Anda juga akan mematikan verifikasi dua langkah. Anda hanya akan masuk dengan kata sandi.",
 	"passkey.verifyTitle": "Konfirmasikan bahwa ini Anda",
 	"passkey.verifyDescription": "Konfirmasikan kata sandi Anda atau gunakan passkey untuk melanjutkan.",
 	"passkey.verifyFailed": "Verifikasi gagal",

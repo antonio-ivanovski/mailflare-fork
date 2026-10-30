@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "本人であることを確認してから、パスキーを作成します。名前の設定は任意です。",
 	"passkey.removeTitle": "このパスキーを削除しますか？",
 	"passkey.removeDescription": "「{name}」はサインインに使用できなくなります。",
+	"passkey.removeLastSecondFactorWarning": "最後のパスキーを削除すると、2 段階認証もオフになります。パスワードのみでサインインすることになります。",
 	"passkey.verifyTitle": "本人であることを確認",
 	"passkey.verifyDescription": "続行するには、パスワードを確認するか、パスキーを使用してください。",
 	"passkey.verifyFailed": "確認に失敗しました",

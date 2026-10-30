@@ -53,7 +53,10 @@ export function PasskeySetupClient({ token }: { token: string }) {
 		setLoading(true);
 		setError(null);
 		try {
-			if (!browserSupportsWebAuthn()) throw new Error(t("passkey.browserUnsupported"));
+			if (!browserSupportsWebAuthn()) {
+				setError(t("passkey.browserUnsupported"));
+				return;
+			}
 			const started = await startPasskeySetup(token);
 			if (!started.options || !started.ceremonyToken) {
 				setLinkError(authErrorText(started.code, t, "authError.setupInvalid"));

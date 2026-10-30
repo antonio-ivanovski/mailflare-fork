@@ -60,6 +60,7 @@ CREATE TABLE `auth_step_ups` (
 	`purpose` text NOT NULL,
 	`target_user_id` text,
 	`security_version` integer DEFAULT 0 NOT NULL,
+	`actor_security_version` integer DEFAULT 0 NOT NULL,
 	`expires_at` integer NOT NULL,
 	`used_at` integer,
 	`created_at` integer NOT NULL,
@@ -76,16 +77,15 @@ END;--> statement-breakpoint
 CREATE TRIGGER `passkey_credentials_count_delete` AFTER DELETE ON `passkey_credentials`
 BEGIN
 	UPDATE `users` SET `passkey_count` = `passkey_count` - 1 WHERE `id` = OLD.`user_id`;
+	UPDATE `users` SET `require_second_factor` = 0
+	WHERE `id` = OLD.`user_id`
+		AND `passkey_count` = 0
+		AND `totp_enabled` = 0
+		AND `deleted_at` IS NULL;
 	SELECT RAISE(ABORT, 'last-auth-method')
 	WHERE (SELECT `passkey_count` FROM `users` WHERE `id` = OLD.`user_id`) = 0
 		AND (SELECT `deleted_at` FROM `users` WHERE `id` = OLD.`user_id`) IS NULL
-		AND (
-			(SELECT `password_hash` FROM `users` WHERE `id` = OLD.`user_id`) = '!passkey-only'
-			OR (
-				(SELECT `require_second_factor` FROM `users` WHERE `id` = OLD.`user_id`) = 1
-				AND (SELECT `totp_enabled` FROM `users` WHERE `id` = OLD.`user_id`) = 0
-			)
-		);
+		AND (SELECT `password_hash` FROM `users` WHERE `id` = OLD.`user_id`) = '!passkey-only';
 END;--> statement-breakpoint
 CREATE TRIGGER `users_last_password_update` BEFORE UPDATE OF `password_hash` ON `users`
 WHEN NEW.`password_hash` = '!passkey-only' AND NEW.`passkey_count` = 0

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Sahkan bahawa ini anda, kemudian cipta passkey. Menamakannya adalah pilihan.",
 	"passkey.removeTitle": "Buang passkey ini?",
 	"passkey.removeDescription": "\"{name}\" tidak lagi berfungsi untuk log masuk.",
+	"passkey.removeLastSecondFactorWarning": "Membuang passkey terakhir anda juga akan mematikan pengesahan dua langkah. Anda hanya akan log masuk dengan kata laluan.",
 	"passkey.verifyTitle": "Sahkan bahawa ini anda",
 	"passkey.verifyDescription": "Sahkan kata laluan anda atau gunakan passkey untuk meneruskan.",
 	"passkey.verifyFailed": "Pengesahan gagal",

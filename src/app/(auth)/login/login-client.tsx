@@ -62,8 +62,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
         runningRef.current = true;
         setLoading(true);
         const { ok, data } = await finishPasskeyLogin(options, response);
-        if (!ok) throw new Error(authErrorText(data.code, t, "passkey.loginFailed"));
-        finish(data.redirect);
+        if (ok) finish(data.redirect);
       } catch {
         // No credential chosen, a cancelled prompt, or an unavailable
         // autofill surface is not an error on page load.
@@ -75,7 +74,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
       cancelled = true;
       WebAuthnAbortService.cancelCeremony();
     };
-  }, [finish, t]);
+  }, [finish]);
 
   async function onPasskey() {
     if (!browserSupportsWebAuthn()) {

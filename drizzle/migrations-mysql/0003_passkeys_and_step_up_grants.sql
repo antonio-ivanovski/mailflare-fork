@@ -59,6 +59,7 @@ CREATE TABLE `auth_step_ups` (
 	`purpose` varchar(64) NOT NULL,
 	`target_user_id` varchar(191),
 	`security_version` bigint DEFAULT 0 NOT NULL,
+	`actor_security_version` bigint DEFAULT 0 NOT NULL,
 	`expires_at` bigint NOT NULL,
 	`used_at` bigint,
 	`created_at` bigint NOT NULL,
@@ -80,15 +81,14 @@ END;--> statement-breakpoint
 CREATE TRIGGER `passkey_credentials_count_delete` AFTER DELETE ON `passkey_credentials` FOR EACH ROW
 BEGIN
 	UPDATE `users` SET `passkey_count` = `passkey_count` - 1 WHERE `id` = OLD.`user_id`;
+	UPDATE `users` SET `require_second_factor` = 0
+	WHERE `id` = OLD.`user_id`
+		AND `passkey_count` = 0
+		AND `totp_enabled` = 0
+		AND `deleted_at` IS NULL;
 	IF (SELECT `passkey_count` FROM `users` WHERE `id` = OLD.`user_id`) = 0
 		AND (SELECT `deleted_at` FROM `users` WHERE `id` = OLD.`user_id`) IS NULL
-		AND (
-			(SELECT `password_hash` FROM `users` WHERE `id` = OLD.`user_id`) = '!passkey-only'
-			OR (
-				(SELECT `require_second_factor` FROM `users` WHERE `id` = OLD.`user_id`) = 1
-				AND (SELECT `totp_enabled` FROM `users` WHERE `id` = OLD.`user_id`) = 0
-			)
-		) THEN
+		AND (SELECT `password_hash` FROM `users` WHERE `id` = OLD.`user_id`) = '!passkey-only' THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last-auth-method';
 	END IF;
 END;--> statement-breakpoint

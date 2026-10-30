@@ -7,7 +7,7 @@ import { allowLoginAttempt } from "@/lib/auth/rate-limit";
 import { getSessionTokenFromRequestHeaders } from "@/lib/auth/session";
 import { consumeWebAuthnChallenge, readCeremonyBindings, removeCeremonyCookie } from "@/lib/auth/webauthn/challenges";
 import { isAuthenticationResponseJSON, verifyPasskeyAuthentication } from "@/lib/auth/webauthn/service";
-import { createStepUpGrant } from "@/lib/auth/webauthn/grants";
+import { createStepUpGrant, StaleStepUpProofError } from "@/lib/auth/webauthn/grants";
 import { authError } from "@/lib/http/auth-error";
 import { PasskeyVerificationError } from "@/lib/auth/webauthn/errors";
 
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
 	const env = getEnv();
 	const auth = await requireSessionUser(env, request);
 	if (auth.error) return authError("session_expired", 401);
+	const expectedActorSecurityVersion = auth.user.securityVersion;
 	if (!(await allowLoginAttempt(env, request))) {
 		return authError("rate_limited", 429, { "Retry-After": "60" });
 	}
@@ -44,9 +45,12 @@ export async function POST(request: Request) {
 				sessionToken,
 				action: parsed.data.action,
 				targetUserId: parsed.data.targetUserId,
+				expectedActorSecurityVersion,
 			});
-		} catch {
-			const response = authError("invalid_request", 400);
+		} catch (error) {
+			const response = error instanceof StaleStepUpProofError
+				? authError("verification_required", 409)
+				: authError("invalid_request", 400);
 			removeCeremonyCookie(response.headers, request, challenge.binding);
 			return response;
 		}

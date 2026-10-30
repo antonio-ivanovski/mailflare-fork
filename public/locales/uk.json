@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Підтвердьте, що це ви, а потім створіть ключ доступу. Назва необов’язкова.",
 	"passkey.removeTitle": "Видалити цей ключ доступу?",
 	"passkey.removeDescription": "«{name}» перестане працювати для входу.",
+	"passkey.removeLastSecondFactorWarning": "Видалення останнього ключа доступу також вимкне двоетапну автентифікацію. Ви входитимете лише за паролем.",
 	"passkey.verifyTitle": "Підтвердьте, що це ви",
 	"passkey.verifyDescription": "Підтвердьте пароль або використайте ключ доступу, щоб продовжити.",
 	"passkey.verifyFailed": "Не вдалося підтвердити",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "본인임을 확인한 다음 패스키를 만드세요. 이름 지정은 선택 사항입니다.",
 	"passkey.removeTitle": "이 패스키를 삭제할까요?",
 	"passkey.removeDescription": "\"{name}\" 패스키로는 더 이상 로그인할 수 없습니다.",
+	"passkey.removeLastSecondFactorWarning": "마지막 패스키를 삭제하면 2단계 인증도 꺼집니다. 비밀번호로만 로그인하게 됩니다.",
 	"passkey.verifyTitle": "본인 확인",
 	"passkey.verifyDescription": "계속하려면 비밀번호를 확인하거나 패스키를 사용하세요.",
 	"passkey.verifyFailed": "확인 실패",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "请先确认是你本人，然后创建通行密钥。名称可选。",
 	"passkey.removeTitle": "移除此通行密钥？",
 	"passkey.removeDescription": "“{name}”将无法再用于登录。",
+	"passkey.removeLastSecondFactorWarning": "移除最后一个通行密钥还会关闭两步验证。你将只能使用密码登录。",
 	"passkey.verifyTitle": "确认是你本人",
 	"passkey.verifyDescription": "请确认密码或使用通行密钥以继续。",
 	"passkey.verifyFailed": "验证失败",

@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "එය ඔබම බව තහවුරු කර, පසුව පාස්කී සාදන්න. නමක් දීම විකල්පයි.",
 	"passkey.removeTitle": "මෙම පාස්කී ඉවත් කරන්නද?",
 	"passkey.removeDescription": "\"{name}\" පුරනය සඳහා ක්‍රියා නොකරනු ඇත.",
+	"passkey.removeLastSecondFactorWarning": "ඔබේ අවසන් පාස්කී ඉවත් කිරීමෙන් ද්වි-පියවර සත්‍යාපනය ද අක්‍රිය වේ. ඔබ මුරපදයෙන් පමණක් පුරනය වනු ඇත.",
 	"passkey.verifyTitle": "එය ඔබම බව තහවුරු කරන්න",
 	"passkey.verifyDescription": "ඉදිරියට යාමට ඔබේ මුරපදය තහවුරු කරන්න හෝ පාස්කී එකක් භාවිත කරන්න.",
 	"passkey.verifyFailed": "සත්‍යාපනය අසාර්ථකයි",

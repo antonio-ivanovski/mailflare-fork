@@ -7,7 +7,7 @@ import { authenticateAdminApiKey, canManageAdminAccounts } from "@/lib/api/admin
 import { isPrimaryAdmin } from "@/lib/auth/admin";
 import { updateManagedAccountSchema } from "@/lib/validators";
 import { getLicenseEntitlements } from "@/lib/licenses/service";
-import { PasskeyOnlyPasswordError, selectAccountById, updateAccountCredentials } from "@/app/api/accounts/[id]/utils";
+import { AccountSecurityChangedError, PasskeyOnlyPasswordError, selectAccountById, updateAccountCredentials } from "@/app/api/accounts/[id]/utils";
 import { deleteUserSessions } from "@/lib/auth/session";
 import { createAuditLog } from "@/lib/mailboxes/audit";
 import type { AdminAccountRouteParams } from "./types";
@@ -48,6 +48,9 @@ export async function PATCH(request: Request, { params }: AdminAccountRouteParam
 	} catch (error) {
 		if (error instanceof PasskeyOnlyPasswordError) {
 			return NextResponse.json({ error: "This account uses passkeys only. Send it a recovery link instead.", code: "passkey_only_password" }, { status: 409 });
+		}
+		if (error instanceof AccountSecurityChangedError) {
+			return NextResponse.json({ error: "Another security change is in progress. Refresh and try again.", code: "action_conflict" }, { status: 409 });
 		}
 		throw error;
 	}

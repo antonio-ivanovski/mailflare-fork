@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Confirmez qu'il s'agit bien de vous, puis créez la clé d'accès. Donner un nom est facultatif.",
 	"passkey.removeTitle": "Supprimer cette clé d'accès ?",
 	"passkey.removeDescription": "« {name} » ne fonctionnera plus pour la connexion.",
+	"passkey.removeLastSecondFactorWarning": "La suppression de votre dernière clé d'accès désactivera aussi la vérification en deux étapes. Vous vous connecterez uniquement avec votre mot de passe.",
 	"passkey.verifyTitle": "Confirmez qu'il s'agit bien de vous",
 	"passkey.verifyDescription": "Confirmez votre mot de passe ou utilisez une clé d'accès pour continuer.",
 	"passkey.verifyFailed": "La vérification a échoué",

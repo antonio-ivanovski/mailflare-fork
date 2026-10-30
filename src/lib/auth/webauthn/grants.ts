@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { authStepUps, passkeyEnrollmentGrants, users } from "@/db/schema";
 import { newId } from "@/lib/ids";
@@ -26,6 +26,14 @@ export type EnrollmentGrant = {
 	kind: EnrollmentGrantKind;
 	expiresAt: Date;
 };
+
+/** The session proved itself before a security change, so the proof is stale. */
+export class StaleStepUpProofError extends Error {
+	constructor() {
+		super("The security state changed while the grant was issued");
+		this.name = "StaleStepUpProofError";
+	}
+}
 
 export async function createEnrollmentGrant(
 	env: CloudflareEnv,
@@ -83,23 +91,49 @@ async function currentSecurityVersion(env: CloudflareEnv, userId: string): Promi
 
 export async function createStepUpGrant(
 	env: CloudflareEnv,
-	input: { userId: string; sessionToken: string; action: StepUpAction; targetUserId?: string | null },
+	input: {
+		userId: string;
+		sessionToken: string;
+		action: StepUpAction;
+		targetUserId?: string | null;
+		expectedActorSecurityVersion: number;
+	},
 ): Promise<string> {
 	const db = getDb(env);
 	const targetUserId = input.targetUserId ?? null;
-	const version = await currentSecurityVersion(env, targetUserId ?? input.userId);
-	if (version === null) throw new Error("The account no longer exists");
+	const actorVersion = await currentSecurityVersion(env, input.userId);
+	if (actorVersion === null) throw new Error("The account no longer exists");
+	// The proof was obtained from the session snapshot before this call. If the
+	// actor changed sign-in methods in between, it must not be rebound to the
+	// new version: that would turn an old proof into a grant for a changed account.
+	if (actorVersion !== input.expectedActorSecurityVersion) throw new StaleStepUpProofError();
+	// The grant must stop working when either side changes its sign-in state.
+	// Both versions are stored in the grant and checked again when it is spent.
+	// Cleanup of the actor's grants is an extra layer, not the only binding.
+	const targetVersion = targetUserId ? await currentSecurityVersion(env, targetUserId) : actorVersion;
+	if (targetVersion === null) throw new Error("The account no longer exists");
 	const token = newId("sup");
-	await db.insert(authStepUps).values({
+	const [inserted] = await db.insert(authStepUps).values({
 		id: newId(),
 		userId: input.userId,
 		sessionHash: await hashSessionToken(input.sessionToken),
 		tokenHash: await hashSessionToken(token),
 		purpose: input.action,
 		targetUserId,
-		securityVersion: version,
+		securityVersion: targetVersion,
+		actorSecurityVersion: actorVersion,
 		expiresAt: new Date(Date.now() + STEP_UP_MINUTES * 60 * 1000),
-	});
+	}).returning({ id: authStepUps.id });
+	// A security change may have landed between reading the versions and
+	// inserting. A bump deletes existing grants, so without this check the new
+	// row could outlive the change it should have invalidated.
+	const actorAfter = await currentSecurityVersion(env, input.userId);
+	const targetAfter = targetUserId ? await currentSecurityVersion(env, targetUserId) : actorAfter;
+	if (!inserted || actorAfter !== input.expectedActorSecurityVersion || targetAfter !== targetVersion) {
+		if (inserted) await db.delete(authStepUps).where(eq(authStepUps.id, inserted.id));
+		if (actorAfter !== input.expectedActorSecurityVersion) throw new StaleStepUpProofError();
+		throw new Error("The security state changed while the grant was issued");
+	}
 	// Expired grants can never be consumed; dropping them keeps the table small.
 	await db.delete(authStepUps).where(lt(authStepUps.expiresAt, new Date()));
 	return token;
@@ -119,6 +153,12 @@ async function grantConditions(input: {
 		eq(authStepUps.purpose, input.action),
 		targetUserId ? eq(authStepUps.targetUserId, targetUserId) : isNull(authStepUps.targetUserId),
 		eq(authStepUps.securityVersion, sql`(select ${users.securityVersion} from ${users} where ${users.id} = ${target})`),
+		// Bind the actor as well as the target so removal of the actor's
+		// authenticator invalidates the grant even if row cleanup fails.
+		eq(
+			authStepUps.actorSecurityVersion,
+			sql`(select ${users.securityVersion} from ${users} where ${users.id} = ${input.userId})`,
+		),
 	);
 }
 
@@ -171,8 +211,15 @@ export async function consumeStepUpGrant(
 
 /** Invalidates every outstanding grant once sign-in methods change. */
 export async function bumpSecurityVersion(db: ReturnType<typeof getDb>, userId: string): Promise<void> {
+	// Increment before deleting: createStepUpGrant compares the actor version
+	// again after its insert, so a grant inserted after this delete but before
+	// the version is visible is still rejected by that post-insert check.
 	await db
 		.update(users)
 		.set({ securityVersion: sql`${users.securityVersion} + 1` })
 		.where(eq(users.id, userId));
+	// Grants minted by this user (actor) and for this user (target) both become
+	// invalid. The actor binding in grantConditions is authoritative; this
+	// deletion is cleanup and cannot be relied on alone.
+	await db.delete(authStepUps).where(or(eq(authStepUps.userId, userId), eq(authStepUps.targetUserId, userId)));
 }

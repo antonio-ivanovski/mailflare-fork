@@ -39,10 +39,18 @@ export async function PATCH(request: Request) {
 	}
 
 	const db = getDb(env);
-	await db
+	const [updated] = await db
 		.update(users)
 		.set({ passwordHash: hashPassword(parsed.newPassword) })
-		.where(eq(users.id, user.id));
+		.where(and(
+			eq(users.id, user.id),
+			eq(users.passwordHash, user.passwordHash),
+			eq(users.securityVersion, user.securityVersion),
+			eq(users.totpEnabled, user.totpEnabled),
+			eq(users.requireSecondFactor, user.requireSecondFactor),
+		))
+		.returning({ id: users.id });
+	if (!updated) return authError("action_conflict", 409);
 	await bumpSecurityVersion(db, user.id);
 	// Anyone else holding a session for this account is signed out; this one stays.
 	await deleteUserSessions(env, user.id, getSessionTokenFromRequestHeaders(request));

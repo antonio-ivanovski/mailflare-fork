@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "तुम्हीच आहात याची पुष्टी करा, नंतर पासकी तयार करा. नाव देणे ऐच्छिक आहे.",
 	"passkey.removeTitle": "ही पासकी काढायची?",
 	"passkey.removeDescription": "\"{name}\" साइन इनसाठी चालणार नाही.",
+	"passkey.removeLastSecondFactorWarning": "तुमची शेवटची पासकी काढल्यास द्विस्तरीय पडताळणीही बंद होईल. तुम्ही फक्त पासवर्डने साइन इन कराल.",
 	"passkey.verifyTitle": "तुम्हीच आहात याची पुष्टी करा",
 	"passkey.verifyDescription": "पुढे जाण्यासाठी तुमच्या पासवर्डची पुष्टी करा किंवा पासकी वापरा.",
 	"passkey.verifyFailed": "पडताळणी अयशस्वी झाली",

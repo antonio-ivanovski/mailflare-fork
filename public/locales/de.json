@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Bestätigen Sie, dass Sie es sind, und erstellen Sie dann den Passkey. Die Benennung ist optional.",
 	"passkey.removeTitle": "Diesen Passkey entfernen?",
 	"passkey.removeDescription": "„{name}“ funktioniert dann nicht mehr für die Anmeldung.",
+	"passkey.removeLastSecondFactorWarning": "Wenn Sie Ihren letzten Passkey entfernen, wird auch die Zwei-Schritt-Verifizierung deaktiviert. Sie melden sich dann nur noch mit Ihrem Passwort an.",
 	"passkey.verifyTitle": "Bestätigen Sie, dass Sie es sind",
 	"passkey.verifyDescription": "Bestätigen Sie Ihr Passwort oder verwenden Sie einen Passkey, um fortzufahren.",
 	"passkey.verifyFailed": "Bestätigung fehlgeschlagen",

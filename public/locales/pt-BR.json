@@ -2211,6 +2211,7 @@
 	"passkey.addDescription": "Confirme que é você e crie a chave de acesso. Dar um nome a ela é opcional.",
 	"passkey.removeTitle": "Remover esta chave de acesso?",
 	"passkey.removeDescription": "“{name}” deixará de funcionar para entrar.",
+	"passkey.removeLastSecondFactorWarning": "Remover sua última chave de acesso também desativará a verificação em duas etapas. Você entrará apenas com sua senha.",
 	"passkey.verifyTitle": "Confirme que é você",
 	"passkey.verifyDescription": "Confirme sua senha ou use uma chave de acesso para continuar.",
 	"passkey.verifyFailed": "Falha na verificação",
