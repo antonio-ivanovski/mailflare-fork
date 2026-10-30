@@ -374,6 +374,7 @@ export async function ensureDemoUser(env: CloudflareEnv) {
 	const id = newId("usr");
 	await db.insert(users).values({
 		id,
+		remoteContentMode: "ask",
 		email: demoCredentials.email,
 		passwordHash: hashPassword(demoCredentials.password),
 		name: "Demo User",

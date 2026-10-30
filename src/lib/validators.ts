@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPublicHttpsUrl, PUBLIC_HTTPS_URL_MESSAGE } from "@/lib/security/public-url";
 import { getEmailAddress, splitEmailAddressList } from "@/lib/email/address";
 import { DEFAULT_FOLDER_COLOR, FOLDER_COLOR_VALUES } from "@/lib/folders/colors";
 import { MAX_FOLLOW_UP_DAYS } from "@/lib/follow-ups/follow-up-utils";
@@ -339,7 +340,7 @@ export const domainRoutingRuleSchema = z
 	});
 
 export const webhookSchema = z.object({
-	url: z.string().url().max(2048),
+	url: z.string().url().max(2048).refine(isPublicHttpsUrl, PUBLIC_HTTPS_URL_MESSAGE),
 	description: z.string().trim().max(200).optional(),
 	events: z
 		.array(z.enum(["message.inbound", "message.outbound", "message.failed"]))
@@ -349,7 +350,7 @@ export const webhookSchema = z.object({
 });
 
 export const webhookUpdateSchema = z.object({
-	url: z.string().url().max(2048).optional(),
+	url: z.string().url().max(2048).refine(isPublicHttpsUrl, PUBLIC_HTTPS_URL_MESSAGE).optional(),
 	description: z.string().trim().max(200).nullish(),
 	events: z
 		.array(z.enum(["message.inbound", "message.outbound", "message.failed"]))

@@ -269,6 +269,12 @@
         "ALTER TABLE \"calendar_events\" ADD COLUMN \"reminder_minutes\" bigint;",
         "ALTER TABLE \"calendar_events\" ADD COLUMN \"last_reminded_start\" bigint;"
       ]
+    },
+    {
+      "name": "0003_remote_content_ask.sql",
+      "statements": [
+        "UPDATE \"users\" SET \"remote_content_mode\" = 'ask' WHERE \"remote_content_mode\" = 'allow';"
+      ]
     }
   ]
 }

@@ -115,7 +115,11 @@ export function RichTextEditor({
 			selection.addRange(savedRange.current);
 		}
 		if (selection && selection.isCollapsed) {
-			document.execCommand("insertHTML", false, `<a href="${href.replace(/"/g, "&quot;")}">${href}</a>`);
+			// The URL field is untrusted text: build the anchor with DOM APIs so it is never parsed as HTML.
+			const anchor = document.createElement("a");
+			anchor.setAttribute("href", href);
+			anchor.textContent = href;
+			document.execCommand("insertHTML", false, anchor.outerHTML);
 		} else {
 			document.execCommand("createLink", false, href);
 		}

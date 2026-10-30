@@ -194,3 +194,23 @@ export function readSesAuthentication(raw: ArrayBuffer, fromAddress: string): Me
 		aligned: senderDomainMatches(fromAddress, alignedDomains),
 	};
 }
+
+/** Headers a provider has not vouched for: nothing the sender wrote here may count as authentication. */
+const UNTRUSTED_PROVIDER_HEADERS = new Set(["authentication-results", "received-spf", "arc-authentication-results", "received", "return-path", "x-ses-receipt", "x-ses-spam-verdict", "x-ses-virus-verdict", "x-ses-dkim-signature"]);
+const MAX_HEADER_ENTRIES = 200;
+const MAX_HEADER_VALUE = 2000;
+
+/**
+ * A bounded header map (lower-case names, first value wins) for providers that do not hand one over,
+ * so auto-reply suppression and spam analysis can see Auto-Submitted, Precedence, List-Id and similar.
+ */
+export function readHeaderMap(raw: ArrayBuffer): Record<string, string> {
+	const map: Record<string, string> = {};
+	let count = 0;
+	for (const header of readHeaderLines(raw)) {
+		if (UNTRUSTED_PROVIDER_HEADERS.has(header.name) || header.name in map) continue;
+		map[header.name] = header.value.slice(0, MAX_HEADER_VALUE);
+		if (++count >= MAX_HEADER_ENTRIES) break;
+	}
+	return map;
+}

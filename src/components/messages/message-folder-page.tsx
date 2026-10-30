@@ -326,7 +326,7 @@ export function MessageFolderPage({
 		group: grouped ? "thread" : undefined,
 	}, !mailboxesLoading, config.folderId);
 	const { counts } = useMessageCounts(selectedMailbox?.id, !mailboxesLoading);
-	usePageLoading(mailboxesLoading || isLoading);
+	usePageLoading(mailboxesLoading || isLoading, true);
 	const headerIcons = config.headerIcons ?? [];
 	const hasActiveFilters = !!query.trim();
 	const folderCount = config.folderId

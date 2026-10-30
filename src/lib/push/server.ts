@@ -254,7 +254,10 @@ export async function sendPushNotifications(
 	userIds: string[],
 	payload: NewMessageNotification,
 ): Promise<void> {
-	const sender = (payload.fromName ?? payload.from).slice(0, 240);
+	// The display name is whatever the sender typed; always show the real address beside it.
+	// eslint-disable-next-line no-control-regex
+	const name = (payload.fromName ?? "").replace(/[\u0000-\u001f\u202a-\u202e\u2066-\u2069]/g, "").trim();
+	const sender = (name && name.toLowerCase() !== payload.from.toLowerCase() ? `${name.slice(0, 120)} <${payload.from}>` : payload.from).slice(0, 240);
 	await sendPushContent(env, userIds, {
 		title: (payload.subject || "New email").slice(0, 180),
 		body: `From ${sender}`,
