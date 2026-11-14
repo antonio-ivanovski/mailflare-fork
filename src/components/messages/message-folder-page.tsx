@@ -21,6 +21,7 @@ import type { Message } from "@/hooks/types";
 import { setMessageDragData } from "@/lib/messages/drag-utils";
 import { BulkMessageToolbar } from "./bulk-message-toolbar";
 import { useMessageListState } from "./message-list-state";
+import { getEmptyPageOffset } from "./page-offset";
 import { SwipeableRow } from "./swipeable-row";
 import { MessageListRowActions } from "./message-list-row-actions";
 import { dispatchMessageCountsDelta, toggleMessageStar } from "./message-list-row-actions-utils";
@@ -472,8 +473,10 @@ export function MessageFolderPage({
 	}, [messages, isLoading, setSelectedMessages]);
 
 	useEffect(() => {
-		if (isLoading || offset === 0 || messages.length > 0) return;
-		setOffset(total > 0 ? Math.floor((total - 1) / limit) * limit : 0);
+		if (isLoading || messages.length > 0) return;
+		const nextOffset = getEmptyPageOffset(offset, total, limit);
+		if (nextOffset === null) return;
+		setOffset(nextOffset);
 	}, [isLoading, offset, messages.length, total, limit, setOffset]);
 
 	const updateSelectedMessage = useCallback((messageId: string, selected: boolean) => {
